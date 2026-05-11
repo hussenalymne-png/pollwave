@@ -1,345 +1,277 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
-const path = require('path');
 const multer = require('multer');
+const path = require('path');
 const fs = require('fs');
+const QRCode = require('qrcode');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
-const PORT = process.env.PORT || 3000;
-
-// Uploads
-const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+// Storage für Uploads
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, uploadDir),
-    filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
+  destination: (req, file, cb) => {
+    const dir = 'uploads';
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
 });
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({ storage });
 
-// Static files
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(uploadDir));
-app.use(express.json());
+// Static Files
+app.use(express.static('public'));
+app.use('/uploads', express.static('uploads'));
 
 // Game State
 let gameState = {
-    status: 'waiting',
-    players: {},
-    questions: [],
-    currentQuestion: 0,
-    timer: null,
-    timeLeft: 0,
-    answers: {}
+  questions: [],
+  currentQuestion: -1,
+  state: 'waiting',
+  participants: {},
+  answers: {},
+  timer: null,
+  adminPassword: 'admin123'
 };
+
+const ROOM_CODE = 'X3PL2U';
 
 // Routes
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-app.post('/admin/login', (req, res) => {
-    const { password } = req.body;
-    if (password === ADMIN_PASSWORD) {
-        res.json({ success: true });
-    } else {
-        res.json({ success: false, message: 'Falsches Passwort' });
-    }
+app.post('/upload', upload.single('image'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file' });
+  res.json({ url: '/uploads/' + req.file.filename });
 });
 
-app.post('/admin/upload', upload.single('image'), (req, res) => {
-    if (!req.file) return res.status(400).json({ error: 'Kein Bild' });
-    res.json({ url: '/uploads/' + req.file.filename });
-});
-
-app.get('/admin/state', (req, res) => {
-    res.json({
-        status: gameState.status,
-        playerCount: Object.keys(gameState.players).length,
-        questions: gameState.questions,
-        currentQuestion: gameState.currentQuestion,
-        answers: gameState.answers
-    });
+app.get('/qr', async (req, res) => {
+  try {
+    const url = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+    const qr = await QRCode.toDataURL(url);
+    res.json({ qr });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // Socket.io
 io.on('connection', (socket) => {
-    console.log('Verbunden:', socket.id);
+  console.log('Connected:', socket.id);
 
-    // Spieler tritt bei
-    socket.on('join', (data) => {
-        const { name, roomCode } = data;
-        if (roomCode !== 'X3PL2U') {
-            socket.emit('joinError', { message: 'Falscher Raumcode!' });
-            return;
-        }
-        if (gameState.status !== 'waiting') {
-            socket.emit('joinError', { message: 'Spiel läuft bereits!' });
-            return;
-        }
-        gameState.players[socket.id] = {
-            name: name,
-            score: 0,
-            answers: []
-        };
-        socket.emit('joinSuccess', { name: name });
-        io.emit('playerCount', { count: Object.keys(gameState.players).length });
-        console.log(`${name} ist beigetreten`);
+  // Admin Login
+  socket.on('adminLogin', (password, cb) => {
+    if (password === gameState.adminPassword) {
+      socket.isAdmin = true;
+      cb({ success: true });
+    } else {
+      cb({ success: false });
+    }
+  });
+
+  // Get State
+  socket.on('getState', (cb) => {
+    cb({
+      questions: gameState.questions,
+      currentQuestion: gameState.currentQuestion,
+      participants: Object.keys(gameState.participants).length,
+      state: gameState.state
+    });
+  });
+
+  // Join Game
+  socket.on('joinGame', (data, cb) => {
+    const { name, code } = data;
+    if (code !== ROOM_CODE) {
+      return cb({ success: false, error: 'Falscher Code!' });
+    }
+    gameState.participants[socket.id] = {
+      name,
+      score: 0,
+      answers: []
+    };
+    socket.playerName = name;
+    io.emit('participantJoined', {
+      count: Object.keys(gameState.participants).length
+    });
+    cb({ success: true, name });
+    console.log(`${name} joined`);
+  });
+
+  // Add Question
+  socket.on('addQuestion', (question, cb) => {
+    if (gameState.questions.length >= 20) {
+      return cb({ success: false, error: 'Max 20 Fragen!' });
+    }
+    gameState.questions.push(question);
+    cb({ success: true, questions: gameState.questions });
+  });
+
+  // Delete Question
+  socket.on('deleteQuestion', (index, cb) => {
+    gameState.questions.splice(index, 1);
+    cb({ success: true, questions: gameState.questions });
+  });
+
+  // Start Game
+  socket.on('startGame', (cb) => {
+    if (gameState.questions.length === 0) {
+      return cb({ success: false, error: 'Keine Fragen!' });
+    }
+    gameState.currentQuestion = 0;
+    gameState.state = 'playing';
+    startQuestion(0);
+    cb({ success: true, currentQuestion: 0 });
+  });
+
+  // Next Question
+  socket.on('nextQuestion', (cb) => {
+    const next = gameState.currentQuestion + 1;
+    if (next >= gameState.questions.length) {
+      gameState.state = 'finished';
+      clearTimer();
+      sendLeaderboard();
+      return cb({ success: true, finished: true });
+    }
+    gameState.currentQuestion = next;
+    startQuestion(next);
+    cb({ success: true, currentQuestion: next, finished: false });
+  });
+
+  // Pause Game
+  socket.on('pauseGame', (cb) => {
+    if (gameState.state === 'playing') {
+      gameState.state = 'paused';
+      clearTimer();
+    } else {
+      gameState.state = 'playing';
+    }
+    cb({ state: gameState.state });
+  });
+
+  // Reset Game
+  socket.on('resetGame', (cb) => {
+    clearTimer();
+    Object.keys(gameState.participants).forEach(id => {
+      if (gameState.participants[id]) {
+        gameState.participants[id].score = 0;
+        gameState.participants[id].answers = [];
+      }
+    });
+    gameState.currentQuestion = -1;
+    gameState.state = 'waiting';
+    gameState.answers = {};
+    io.emit('gameReset');
+    cb({ success: true, questions: gameState.questions });
+  });
+
+  // Submit Answer
+  socket.on('submitAnswer', (data, cb) => {
+    const { questionIndex, answer, timeLeft } = data;
+    if (questionIndex !== gameState.currentQuestion) {
+      return cb({ success: false });
+    }
+    if (!gameState.answers[questionIndex]) {
+      gameState.answers[questionIndex] = [0,0,0,0];
+    }
+    if (gameState.answers[questionIndex][answer] !== undefined) {
+      gameState.answers[questionIndex][answer]++;
+    }
+
+    const q = gameState.questions[questionIndex];
+    let points = 0;
+    if (answer === q.correct) {
+      points = 200 + Math.round((timeLeft / q.time) * 800);
+    }
+
+    if (gameState.participants[socket.id]) {
+      gameState.participants[socket.id].score += points;
+    }
+
+    io.emit('answerSubmitted', {
+      counts: gameState.answers[questionIndex]
     });
 
-    // Admin: Spiel starten
-    socket.on('adminStart', (data) => {
-        if (data.password !== ADMIN_PASSWORD) return;
-        if (gameState.questions.length === 0) {
-            socket.emit('adminError', { message: 'Keine Fragen vorhanden!' });
-            return;
-        }
-        gameState.status = 'getready';
-        gameState.currentQuestion = 0;
-        gameState.answers = {};
-        
-        // Reset scores
-        Object.keys(gameState.players).forEach(id => {
-            gameState.players[id].score = 0;
-        });
+    sendLeaderboard();
+    cb({ success: true, correct: answer === q.correct, points });
+  });
 
-        io.emit('getReady', { countdown: 3 });
-        
-        let countdown = 3;
-        const readyTimer = setInterval(() => {
-            countdown--;
-            if (countdown <= 0) {
-                clearInterval(readyTimer);
-                startQuestion();
-            } else {
-                io.emit('getReady', { countdown });
-            }
-        }, 1000);
-    });
+  // Change Password
+  socket.on('changePassword', (pw, cb) => {
+    if (socket.isAdmin) {
+      gameState.adminPassword = pw;
+      cb({ success: true });
+    } else {
+      cb({ success: false });
+    }
+  });
 
-    // Admin: Nächste Frage
-    socket.on('adminNext', (data) => {
-        if (data.password !== ADMIN_PASSWORD) return;
-        gameState.currentQuestion++;
-        if (gameState.currentQuestion >= gameState.questions.length) {
-            endGame();
-        } else {
-            gameState.status = 'getready';
-            io.emit('getReady', { countdown: 3 });
-            let countdown = 3;
-            const readyTimer = setInterval(() => {
-                countdown--;
-                if (countdown <= 0) {
-                    clearInterval(readyTimer);
-                    startQuestion();
-                } else {
-                    io.emit('getReady', { countdown });
-                }
-            }, 1000);
-        }
-    });
-
-    // Admin: Pause
-    socket.on('adminPause', (data) => {
-        if (data.password !== ADMIN_PASSWORD) return;
-        if (gameState.timer) {
-            clearInterval(gameState.timer);
-            gameState.timer = null;
-        }
-        gameState.status = 'paused';
-        io.emit('gamePaused');
-    });
-
-    // Admin: Fortsetzen
-    socket.on('adminResume', (data) => {
-        if (data.password !== ADMIN_PASSWORD) return;
-        gameState.status = 'question';
-        resumeTimer();
-        io.emit('gameResumed');
-    });
-
-    // Admin: Reset
-    socket.on('adminReset', (data) => {
-        if (data.password !== ADMIN_PASSWORD) return;
-        if (gameState.timer) clearInterval(gameState.timer);
-        gameState = {
-            status: 'waiting',
-            players: {},
-            questions: gameState.questions,
-            currentQuestion: 0,
-            timer: null,
-            timeLeft: 0,
-            answers: {}
-        };
-        io.emit('gameReset');
-    });
-
-    // Admin: Fragen speichern
-    socket.on('adminSaveQuestions', (data) => {
-        if (data.password !== ADMIN_PASSWORD) return;
-        gameState.questions = data.questions;
-        socket.emit('questionsSaved', { count: data.questions.length });
-    });
-
-    // Spieler antwortet
-    socket.on('answer', (data) => {
-        if (gameState.status !== 'question') return;
-        const player = gameState.players[socket.id];
-        if (!player) return;
-        
-        const qIndex = gameState.currentQuestion;
-        if (!gameState.answers[qIndex]) gameState.answers[qIndex] = {};
-        if (gameState.answers[qIndex][socket.id]) return; // bereits geantwortet
-
-        const question = gameState.questions[qIndex];
-        const isCorrect = data.answer === question.correct;
-        const timeBonus = Math.floor((gameState.timeLeft / question.time) * 800);
-        const points = isCorrect ? 200 + timeBonus : 0;
-
-        gameState.answers[qIndex][socket.id] = {
-            answer: data.answer,
-            correct: isCorrect,
-            points: points
-        };
-
-        if (isCorrect) player.score += points;
-
-        socket.emit('answerResult', {
-            correct: isCorrect,
-            points: points,
-            totalScore: player.score
-        });
-
-        // Stats an Admin
-        const answerDist = {};
-        Object.values(gameState.answers[qIndex]).forEach(a => {
-            answerDist[a.answer] = (answerDist[a.answer] || 0) + 1;
-        });
-        io.emit('answerStats', {
-            total: Object.keys(gameState.answers[qIndex]).length,
-            distribution: answerDist
-        });
-    });
-
-    // Trennung
-    socket.on('disconnect', () => {
-        if (gameState.players[socket.id]) {
-            console.log(`${gameState.players[socket.id].name} hat getrennt`);
-            delete gameState.players[socket.id];
-            io.emit('playerCount', { count: Object.keys(gameState.players).length });
-        }
-    });
+  // Disconnect
+  socket.on('disconnect', () => {
+    if (socket.playerName) {
+      delete gameState.participants[socket.id];
+      io.emit('participantJoined', {
+        count: Object.keys(gameState.participants).length
+      });
+    }
+  });
 });
 
-function startQuestion() {
-    const question = gameState.questions[gameState.currentQuestion];
-    gameState.status = 'question';
-    gameState.timeLeft = question.time || 20;
+function startQuestion(index) {
+  const q = gameState.questions[index];
+  if (!q) return;
+  gameState.answers[index] = [0,0,0,0];
 
-    io.emit('question', {
-        index: gameState.currentQuestion,
-        total: gameState.questions.length,
-        text: question.text,
-        image: question.image || null,
-        options: question.options,
-        time: gameState.timeLeft
-    });
+  io.emit('questionStarted', {
+    index,
+    question: q.text,
+    options: q.options,
+    time: q.time,
+    image: q.image || null,
+    total: gameState.questions.length
+  });
 
-    gameState.timer = setInterval(() => {
-        gameState.timeLeft--;
-        io.emit('timerUpdate', { timeLeft: gameState.timeLeft });
+  let timeLeft = q.time;
+  clearTimer();
 
-        if (gameState.timeLeft <= 0) {
-            clearInterval(gameState.timer);
-            gameState.timer = null;
-            showResults();
-        }
-    }, 1000);
+  gameState.timer = setInterval(() => {
+    timeLeft--;
+    io.emit('timerUpdate', { time: timeLeft });
+    if (timeLeft <= 0) {
+      clearTimer();
+      io.emit('questionEnded', {
+        correct: q.correct,
+        counts: gameState.answers[index]
+      });
+      sendLeaderboard();
+    }
+  }, 1000);
 }
 
-function resumeTimer() {
-    gameState.timer = setInterval(() => {
-        gameState.timeLeft--;
-        io.emit('timerUpdate', { timeLeft: gameState.timeLeft });
-
-        if (gameState.timeLeft <= 0) {
-            clearInterval(gameState.timer);
-            gameState.timer = null;
-            showResults();
-        }
-    }, 1000);
+function clearTimer() {
+  if (gameState.timer) {
+    clearInterval(gameState.timer);
+    gameState.timer = null;
+  }
 }
 
-function showResults() {
-    gameState.status = 'result';
-    const question = gameState.questions[gameState.currentQuestion];
-    const qAnswers = gameState.answers[gameState.currentQuestion] || {};
-    
-    const answerDist = {};
-    question.options.forEach((_, i) => answerDist[i] = 0);
-    Object.values(qAnswers).forEach(a => {
-        answerDist[a.answer] = (answerDist[a.answer] || 0) + 1;
-    });
-
-    io.emit('showResult', {
-        correct: question.correct,
-        explanation: question.explanation || '',
-        distribution: answerDist,
-        correctText: question.options[question.correct]
-    });
-
-    setTimeout(() => {
-        showLeaderboard();
-    }, 5000);
+function sendLeaderboard() {
+  const lb = Object.values(gameState.participants)
+    .sort((a, b) => b.score - a.score)
+    .map(p => ({ name: p.name, score: p.score }));
+  io.emit('leaderboardUpdate', { leaderboard: lb });
 }
 
-function showLeaderboard() {
-    gameState.status = 'leaderboard';
-    const leaderboard = Object.values(gameState.players)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 10)
-        .map((p, i) => ({ rank: i + 1, name: p.name, score: p.score }));
-
-    io.emit('showLeaderboard', { leaderboard });
-
-    setTimeout(() => {
-        gameState.currentQuestion++;
-        if (gameState.currentQuestion >= gameState.questions.length) {
-            endGame();
-        } else {
-            io.emit('getReady', { countdown: 3 });
-            let countdown = 3;
-            const readyTimer = setInterval(() => {
-                countdown--;
-                if (countdown <= 0) {
-                    clearInterval(readyTimer);
-                    startQuestion();
-                } else {
-                    io.emit('getReady', { countdown });
-                }
-            }, 1000);
-        }
-    }, 5000);
-}
-
-function endGame() {
-    gameState.status = 'ended';
-    const finalLeaderboard = Object.values(gameState.players)
-        .sort((a, b) => b.score - a.score)
-        .map((p, i) => ({ rank: i + 1, name: p.name, score: p.score }));
-
-    io.emit('gameEnded', { leaderboard: finalLeaderboard });
-}
-
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Server läuft auf Port ${PORT}`);
-    console.log(`Admin: http://localhost:${PORT}/admin`);
+  console.log(`PollWave running on port ${PORT}`);
 });
