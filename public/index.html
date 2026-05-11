@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PollWave</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0a0a1a;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .screen { display: none; width: 100%; max-width: 600px; padding: 20px; }
+        .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+        /* JOIN SCREEN */
+        .logo { font-size: 3em; font-weight: bold; color: #00d4ff; margin-bottom: 10px; }
+        .room-code { font-size: 1.2em; color: #888; margin-bottom: 30px; }
+        input {
+            width: 100%; padding: 15px; font-size: 1.2em;
+            border: 2px solid #333; border-radius: 10px;
+            background: #1a1a2e; color: white; text-align: center;
+            margin-bottom: 15px;
+        }
+        button {
+            width: 100%; padding: 15px; font-size: 1.2em;
+            background: linear-gradient(135deg, #00d4ff, #7b2fff);
+            border: none; border-radius: 10px; color: white;
+            cursor: pointer; font-weight: bold;
+        }
+        button:hover { opacity: 0.9; }
+
+        /* WAITING SCREEN */
+        .waiting-icon { font-size: 4em; margin-bottom: 20px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .waiting-title { font-size: 2em; font-weight: bold; color: #00d4ff; margin-bottom: 10px; }
+        .waiting-sub { color: #888; font-size: 1em; }
+
+        /* GET READY SCREEN */
+        .getready-title { font-size: 2.5em; font-weight: bold; color: #00d4ff; margin-bottom: 30px; }
+        .countdown-number {
+            font-size: 8em; font-weight: bold;
+            background: linear-gradient(135deg, #00d4ff, #7b2fff);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            animation: countPulse 1s ease-in-out;
+        }
+        @keyframes countPulse { 0% { transform: scale(1.5); opacity:0; } 100% { transform: scale(1); opacity:1; } }
+
+        /* QUESTION SCREEN */
+        .question-header {
+            width: 100%; display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 20px;
+        }
+        .question-num { color: #888; font-size: 0.9em; }
+        .score-display {
+            background: linear-gradient(135deg, #00d4ff, #7b2fff);
+            padding: 5px 15px; border-radius: 20px; font-weight: bold;
+        }
+        .timer-container { position: relative; width: 80px; height: 80px; margin-bottom: 20px; }
+        .timer-circle {
+            width: 80px; height: 80px; border-radius: 50%;
+            background: conic-gradient(#00d4ff 0deg, #1a1a2e 0deg);
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.5s;
+        }
+        .timer-inner {
+            width: 60px; height: 60px; border-radius: 50%;
+            background: #0a0a1a; display: flex; align-items: center;
+            justify-content: center; font-size: 1.4em; font-weight: bold;
+        }
+        .question-image { width: 100%; max-height: 200px; object-fit: cover; border-radius: 10px; margin-bottom: 20px; }
+        .question-text { font-size: 1.4em; font-weight: bold; text-align: center; margin-bottom: 25px; line-height: 1.4; }
+        .answers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+        .answer-btn {
+            padding: 20px 10px; font-size: 1em; border-radius: 10px;
+            border: none; color: white; cursor: pointer; font-weight: bold;
+            transition: transform 0.1s, opacity 0.3s;
+        }
+        .answer-btn:hover { transform: scale(1.02); }
+        .answer-btn:disabled { cursor: not-allowed; }
+        .answer-btn.correct { background: #00c853 !important; animation: correctAnim 0.5s; }
+        .answer-btn.wrong { background: #d50000 !important; }
+        .answer-btn.reveal { opacity: 0.5; }
+        .answer-btn.reveal.correct { opacity: 1; }
+        @keyframes correctAnim { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+        .colors { background: #e74c3c; }
+        .colors:nth-child(2) { background: #3498db; }
+        .colors:nth-child(3) { background: #2ecc71; }
+        .colors:nth-child(4) { background: #f39c12; }
+
+        /* RESULT SCREEN */
+        .result-icon { font-size: 5em; margin-bottom: 20px; }
+        .result-title { font-size: 2em; font-weight: bold; margin-bottom: 10px; }
+        .result-points {
+            font-size: 3em; font-weight: bold;
+            background: linear-gradient(135deg, #00d4ff, #7b2fff);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .result-sub { color: #888; margin-top: 10px; }
+
+        /* LEADERBOARD SCREEN */
+        .lb-title { font-size: 2em; font-weight: bold; color: #00d4ff; margin-bottom: 25px; }
+        .lb-list { width: 100%; }
+        .lb-item {
+            display: flex; align-items: center; padding: 12px 15px;
+            background: #1a1a2e; border-radius: 10px; margin-bottom: 8px;
+        }
+        .lb-rank { font-size: 1.5em; width: 40px; }
+        .lb-name { flex: 1; font-weight: bold; }
+        .lb-score {
+            font-weight: bold;
+            background: linear-gradient(135deg, #00d4ff, #7b2fff);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .lb-item.me { border: 2px solid #00d4ff; }
+
+        /* FINAL SCREEN */
+        .final-title { font-size: 2.5em; font-weight: bold; color: #00d4ff; margin-bottom: 10px; }
+        .final-sub { color: #888; margin-bottom: 30px; }
+        .final-score {
+            font-size: 4em; font-weight: bold;
+            background: linear-gradient(135deg, #00d4ff, #7b2fff);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+        .trophy { font-size: 5em; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+<!-- JOIN -->
+<div class="screen active" id="joinScreen">
+    <div class="logo">🌊 PollWave</div>
+    <div class="room-code">Raum: X3PL2U</div>
+    <input type="text" id="nameInput" placeholder="Dein Name..." maxlength="20">
+    <button onclick="joinGame()">Beitreten</button>
+</div>
+
+<!-- WAITING -->
+<div class="screen" id="waitingScreen">
+    <div class="waiting-icon">⏳</div>
+    <div class="waiting-title">Warte auf Start...</div>
+    <div class="waiting-sub" id="waitingName"></div>
+</div>
+
+<!-- GET READY -->
+<div class="screen" id="getReadyScreen">
+    <div class="getready-title">Mach dich bereit!</div>
+    <div class="countdown-number" id="countdownNum">3</div>
+</div>
+
+<!-- QUESTION -->
+<div class="screen" id="questionScreen">
+    <div class="question-header">
+        <div class="question-num" id="questionNum">Frage 1/10</div>
+        <div class="score-display" id="scoreDisplay">⭐ 0</div>
+    </div>
+    <div class="timer-container">
+        <div class="timer-circle" id="timerCircle">
+            <div class="timer-inner" id="timerText">20</div>
+        </div>
+    </div>
+    <img id="questionImage" class="question-image" style="display:none">
+    <div class="question-text" id="questionText"></div>
+    <div class="answers" id="answersContainer"></div>
+</div>
+
+<!-- RESULT -->
+<div class="screen" id="resultScreen">
+    <div class="result-icon" id="resultIcon">✅</div>
+    <div class="result-title" id="resultTitle">Richtig!</div>
+    <div class="result-points" id="resultPoints">+850</div>
+    <div class="result-sub" id="resultSub">Gesamt: 850 Punkte</div>
+</div>
+
+<!-- LEADERBOARD -->
+<div class="screen" id="leaderboardScreen">
+    <div class="lb-title">🏆 Rangliste</div>
+    <div class="lb-list" id="lbList"></div>
+</div>
+
+<!-- FINAL -->
+<div class="screen" id="finalScreen">
+    <div class="trophy" id="finalTrophy">🏆</div>
+    <div class="final-title">Spiel beendet!</div>
+    <div class="final-sub" id="finalPosition"></div>
+    <div class="final-score" id="finalScore">0</div>
+    <div style="color:#888">Gesamtpunkte</div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+let myName = '';
+let myScore = 0;
+let currentAnswer = null;
+let timerInterval = null;
+let questionStartTime = null;
+let currentTimeLimit = 20;
+let audioCtx = null;
+let musicPlaying = false;
+let musicNodes = [];
+
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+}
+
+function playBeep(freq, duration, delay = 0) {
+    if (!audioCtx) return;
+    setTimeout(() => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + duration);
+    }, delay);
+}
+
+function startBackgroundMusic() {
+    if (!audioCtx || musicPlaying) return;
+    musicPlaying = true;
+    // Simple triangle wave loop
+    function playNote(freq, time, dur) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.05, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+        osc.start(time);
+        osc.stop(time + dur);
+        musicNodes.push(osc);
+    }
+    const notes = [261, 294, 329, 349, 392, 349, 329, 294];
+    let t = audioCtx.currentTime;
+    function loop() {
+        if (!musicPlaying) return;
+        notes.forEach((n, i) => playNote(n, t + i * 0.3, 0.25));
+        t += notes.length * 0.3;
+        setTimeout(loop, (notes.length * 0.3 - (audioCtx.currentTime - t + notes.length * 0.3)) * 1000);
+    }
+    loop();
+}
+
+function stopBackgroundMusic() {
+    musicPlaying = false;
+    musicNodes.forEach(n => { try { n.stop(); } catch(e) {} });
+    musicNodes = [];
+}
+
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+function joinGame() {
+    initAudio();
+    const name = document.getElementById('nameInput').value.trim();
+    if (!name) return;
+    myName = name;
+    socket.emit('join', { name, room: 'X3PL2U' });
+}
+
+document.getElementById('nameInput').addEventListener('keypress', e => {
+    if (e.key === 'Enter') joinGame();
+});
+
+socket.on('joined', () => {
+    document.getElementById('waitingName').textContent = `Hallo, ${myName}! 👋`;
+    showScreen('waitingScreen');
+});
+
+socket.on('error', msg => alert(msg));
+
+socket.on('getReady', (data) => {
+    showScreen('getReadyScreen');
+    startBackgroundMusic();
+    let count = data.count || 3;
+    document.getElementById('countdownNum').textContent = count;
+    playBeep(440, 0.2);
+    const interval = setInterval(() => {
+        count--;
+        if (count <= 0) {
+            clearInterval(interval);
+        } else {
+            document.getElementById('countdownNum').textContent = count;
+            playBeep(440, 0.2);
+        }
+    }, 1000);
+});
+
+socket.on('question', (data) => {
+    currentAnswer = null;
+    questionStartTime = Date.now();
+    currentTimeLimit = data.timeLimit || 20;
+
+    showScreen('questionScreen');
+    document.getElementById('questionNum').textContent = `Frage ${data.index + 1}/${data.total}`;
+    document.getElementById('scoreDisplay').textContent = `⭐ ${myScore}`;
+    document.getElementById('questionText').textContent = data.question;
+
+    const img = document.getElementById('questionImage');
+    if (data.image) {
+        img.src = data.image;
+        img.style.display = 'block';
+    } else {
+        img.style.display = 'none';
+    }
+
+    const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12'];
+    const container = document.getElementById('answersContainer');
+    container.innerHTML = '';
+    data.answers.forEach((ans, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'answer-btn';
+        btn.style.background = colors[i];
+        btn.textContent = ans;
+        btn.onclick = () => submitAnswer(i, btn);
+        container.appendChild(btn);
+    });
+
+    startTimer(currentTimeLimit);
+});
+
+function startTimer(seconds) {
+    clearInterval(timerInterval);
+    let remaining = seconds;
+    updateTimerDisplay(remaining, seconds);
+
+    timerInterval = setInterval(() => {
+        remaining--;
+        updateTimerDisplay(remaining, seconds);
+        if (remaining <= 3 && remaining > 0) {
+            playBeep(880, 0.15);
+        }
+        if (remaining <= 0) {
+            clearInterval(timerInterval);
+        }
+    }, 1000);
+}
+
+function updateTimerDisplay(remaining, total) {
+    const pct = remaining / total;
+    const deg = pct * 360;
+    const color = pct > 0.5 ? '#00d4ff' : pct > 0.25 ? '#f39c12' : '#e74c3c';
+    document.getElementById('timerCircle').style.background =
+        `conic-gradient(${color} ${deg}deg, #1a1a2e ${deg}deg)`;
+    document.getElementById('timerText').textContent = remaining;
+}
+
+function submitAnswer(index, btn) {
+    if (currentAnswer !== null) return;
+    currentAnswer = index;
+    const elapsed = (Date.now() - questionStartTime) / 1000;
+    clearInterval(timerInterval);
+
+    document.querySelectorAll('.answer-btn').forEach(b => b.disabled = true);
+    btn.style.opacity = '0.7';
+    btn.style.border = '3px solid white';
+
+    socket.emit('answer', { answerIndex: index, timeElapsed: elapsed });
+}
+
+socket.on('answerResult', (data) => {
+    const btns = document.querySelectorAll('.answer-btn');
+    btns.forEach((btn, i) => {
+        if (i === data.correctIndex) {
+            btn.classList.add('correct');
+        } else if (i === currentAnswer && currentAnswer !== data.correctIndex) {
+            btn.classList.add('wrong');
+        } else {
+            btn.classList.add('reveal');
+        }
+    });
+
+    if (data.correct) {
+        myScore += data.points;
+        playBeep(523, 0.1);
+        setTimeout(() => playBeep(659, 0.1), 100);
+        setTimeout(() => playBeep(784, 0.2), 200);
+    } else {
+        playBeep(200, 0.3);
+    }
+
+    setTimeout(() => {
+        showScreen('resultScreen');
+        document.getElementById('resultIcon').textContent = data.correct ? '✅' : '❌';
+        document.getElementById('resultTitle').textContent = data.correct ? 'Richtig!' : 'Falsch!';
+        document.getElementById('resultPoints').textContent = data.correct ? `+${data.points}` : '+0';
+        document.getElementById('resultSub').textContent = `Gesamt: ${myScore} Punkte`;
+    }, 1500);
+});
+
+socket.on('leaderboard', (data) => {
+    showScreen('leaderboardScreen');
+    const list = document.getElementById('lbList');
+    list.innerHTML = '';
+    const medals = ['🥇', '🥈', '🥉'];
+    data.players.forEach((p, i) => {
+        const item = document.createElement('div');
+        item.className = 'lb-item' + (p.name === myName ? ' me' : '');
+        item.innerHTML = `
+            <div class="lb-rank">${medals[i] || (i + 1) + '.'}</div>
+            <div class="lb-name">${p.name}</div>
+            <div class="lb-score">${p.score} ⭐</div>
+        `;
+        list.appendChild(item);
+    });
+});
+
+socket.on('gameOver', (data) => {
+    stopBackgroundMusic();
+    showScreen('finalScreen');
+    const pos = data.players.findIndex(p => p.name === myName) + 1;
+    const trophies = ['🏆', '🥈', '🥉', '🎖️'];
+    document.getElementById('finalTrophy').textContent = trophies[pos - 1] || '🎖️';
+    document.getElementById('finalPosition').textContent = `Platz ${pos} von ${data.players.length}`;
+    document.getElementById('finalScore').textContent = myScore;
+});
+</script>
+</body>
+</html>
