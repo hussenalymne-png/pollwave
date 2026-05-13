@@ -7,461 +7,352 @@ const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server, {
+    cors: { origin: "*", methods: ["GET", "POST"] }
+});
 
-// uploads/ Ordner automatisch erstellen
-if (!fs.existsSync('uploads')) {
-  fs.mkdirSync('uploads');
-}
-
-// Multer-Konfiguration
+// Storage
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) => 
-    cb(null, Date.now() + path.extname(file.originalname))
+    destination: (req, file, cb) => {
+        const uploadDir = './uploads';
+        if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + path.extname(file.originalname));
+    }
 });
-const upload = multer({ 
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowed = /jpeg|jpg|png|gif|webp/;
-    const ext = allowed.test(
-      path.extname(file.originalname).toLowerCase()
-    );
-    if (ext) cb(null, true);
-    else cb(new Error('Nur Bilder erlaubt!'));
-  }
-});
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
+app.use(express.json());
 
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+// Upload Route
+app.post('/upload', upload.single('image'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'Kein Bild' });
+    res.json({ url: `/uploads/${req.file.filename}` });
 });
 
-// Spielzustand pro Raum
-const games = new Map();
+// Game State
+const games = {};
+const ADMIN_PASSWORD = 'admin123';
 
-function getGame(code) {
-  if (!games.has(code)) {
-    games.set(code, {
-      code,
-      state: 'waiting',
-      questions: [],
-      currentQuestion: -1,
-      participants: [],
-      answers: {},
-      timerInterval: null,
-      timeLeft: 0,
-      maxTime: 0,
-    });
-  }
-  return games.get(code);
+function generateCode() {
+    return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
-function generateRoomCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code;
-  do {
-    code = '';
-    for (let i = 0; i < 6; i++) 
-      code += chars[Math.floor(Math.random() * chars.length)];
-  } while (games.has(code));
-  return code;
-}
-
-// Antwort-Statistiken berechnen
-function getAnswerStats(game) {
-  const q = game.questions[game.currentQuestion];
-  if (!q) return null;
-
-  const stats = q.options.map((opt, i) => ({
-    option: opt,
-    count: 0,
-    percentage: 0,
-    isCorrect: i === q.correct
-  }));
-
-  let totalAnswers = 0;
-  Object.values(game.answers).forEach(a => {
-    if (a.answer >= 0 && a.answer < stats.length) {
-      stats[a.answer].count++;
-      totalAnswers++;
-    }
-  });
-
-  if (totalAnswers > 0) {
-    stats.forEach(s => {
-      s.percentage = Math.round((s.count / totalAnswers) * 100);
-    });
-  }
-
-  return {
-    stats,
-    totalAnswers,
-    totalPlayers: game.participants.length,
-    correctCount: Object.values(game.answers)
-      .filter(a => a.correct).length
-  };
-}
-
-// Leaderboard
-function getLeaderboard(game) {
-  return game.participants
-    .map(p => ({ name: p.name, score: p.score }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 10);
-}
-
-// Timer stoppen
-function clearTimer(game) {
-  if (game.timerInterval) {
-    clearInterval(game.timerInterval);
-    game.timerInterval = null;
-  }
-}
-
-// Frage starten
-function startQuestion(room) {
-  const game = getGame(room);
-  if (!game) return;
-  const q = game.questions[game.currentQuestion];
-  if (!q) return;
-
-  game.answers = {};
-  game.maxTime = 20;
-  game.timeLeft = game.maxTime;
-
-  const questionData = {
-    index: game.currentQuestion,
-    total: game.questions.length,
-    question: q.question,
-    options: q.options,
-    image: q.image,
-    time: game.maxTime
-  };
-
-  io.to(room).emit('questionStarted', questionData);
-  io.to(room).emit('leaderboardUpdate', getLeaderboard(game));
-
-  clearTimer(game);
-  game.timerInterval = setInterval(() => {
-    game.timeLeft--;
-    io.to(room).emit('timerUpdate', { time: game.timeLeft });
-
-    const answerStats = getAnswerStats(game);
-    if (answerStats) {
-      io.to(room).emit('answerStats', answerStats);
-    }
-
-    if (game.timeLeft <= 0) {
-      clearTimer(game);
-      endQuestion(room);
-    }
-  }, 1000);
-}
-
-// Frage beenden
-function endQuestion(room) {
-  const game = getGame(room);
-  if (!game) return;
-  const q = game.questions[game.currentQuestion];
-  if (!q) return;
-
-  game.participants.forEach(p => {
-    if (!game.answers[p.id]) {
-      game.answers[p.id] = { answer: -1, correct: false, points: 0 };
-    }
-  });
-
-  const finalStats = getAnswerStats(game);
-  io.to(room).emit('questionEnded', { 
-    correct: q.correct,
-    stats: finalStats
-  });
-  io.to(room).emit('leaderboardUpdate', getLeaderboard(game));
-
-  setTimeout(() => {
-    const game = getGame(room);
-    if (!game || game.state !== 'playing') return;
-    const next = game.currentQuestion + 1;
-    if (next >= game.questions.length) {
-      endGame(room);
-    } else {
-      game.currentQuestion = next;
-      startQuestion(room);
-    }
-  }, 3000);
-}
-
-// Spiel beenden
-function endGame(room) {
-  const game = getGame(room);
-  if (!game) return;
-  clearTimer(game);
-  game.state = 'finished';
-  io.to(room).emit('gameFinished', getLeaderboard(game));
-}
-
-// Frage an einzelnen Socket senden
-function sendQuestionToSocket(socket, game) {
-  const q = game.questions[game.currentQuestion];
-  if (!q) return;
-  socket.emit('questionStarted', {
-    index: game.currentQuestion,
-    total: game.questions.length,
-    question: q.question,
-    options: q.options,
-    image: q.image,
-    time: game.timeLeft
-  });
-}
-
-// ---------- Socket-Ereignisse ----------
 io.on('connection', (socket) => {
-  let currentRoom = null;
-  let playerName = '';
+    console.log('Verbunden:', socket.id);
 
-  // === Admin Login ===
-  socket.on('adminLogin', (data, cb) => {
-    if (typeof cb !== 'function') cb = () => {};
-    const { code } = data;
-    if (!code) {
-      const newCode = generateRoomCode();
-      const game = getGame(newCode);
-      game.state = 'waiting';
-      socket.join(newCode);
-      socket.adminRoom = newCode;
-      currentRoom = newCode;
-      cb({ 
-        success: true, 
-        code: newCode, 
-        state: game.state, 
-        questions: game.questions 
-      });
-    } else {
-      const upperCode = code.toUpperCase();
-      const game = getGame(upperCode);
-      socket.join(upperCode);
-      socket.adminRoom = upperCode;
-      currentRoom = upperCode;
-      cb({ 
-        success: true, 
-        code: upperCode, 
-        state: game.state, 
-        questions: game.questions,
-        participants: game.participants.length
-      });
-    }
-  });
-
-  // Admin: Frage hinzufügen
-  socket.on('addQuestion', (data, cb) => {
-    if (typeof cb !== 'function') cb = () => {};
-    if (!socket.adminRoom) return cb({ success: false, error: 'Kein Admin' });
-    const game = getGame(currentRoom);
-    if (!game) return cb({ success: false, error: 'Kein Raum' });
-
-    const { question, options, correct, image } = data;
-    if (!question || !options || options.length < 2 || correct === undefined) {
-      return cb({ success: false, error: 'Ungültige Daten' });
-    }
-    game.questions.push({ 
-      question, 
-      options, 
-      correct, 
-      image: image || null 
-    });
-    cb({ success: true, questions: game.questions });
-    io.to(currentRoom).emit('questionsUpdated', game.questions);
-  });
-
-  // Admin: Frage löschen
-  socket.on('deleteQuestion', (index, cb) => {
-    if (typeof cb !== 'function') cb = () => {};
-    if (!socket.adminRoom) return cb({ success: false });
-    const game = getGame(currentRoom);
-    if (!game) return cb({ success: false });
-    if (index < 0 || index >= game.questions.length) 
-      return cb({ success: false });
-
-    game.questions.splice(index, 1);
-    cb({ success: true, questions: game.questions });
-    io.to(currentRoom).emit('questionsUpdated', game.questions);
-  });
-
-  // Admin: Spiel starten
-  socket.on('startGame', (cb) => {
-    if (typeof cb !== 'function') cb = () => {};
-    if (!socket.adminRoom) return cb({ success: false });
-    const game = getGame(currentRoom);
-    if (!game || game.questions.length === 0) 
-      return cb({ success: false, error: 'Keine Fragen vorhanden' });
-    if (game.state !== 'waiting') 
-      return cb({ success: false, error: 'Spiel läuft bereits' });
-
-    game.state = 'playing';
-    game.currentQuestion = 0;
-    game.participants.forEach(p => p.score = 0);
-    startQuestion(currentRoom);
-    cb({ success: true });
-  });
-
-  // Admin: Nächste Frage
-  socket.on('nextQuestion', (cb) => {
-    if (typeof cb !== 'function') cb = () => {};
-    if (!socket.adminRoom) return cb({ success: false });
-    const game = getGame(currentRoom);
-    if (!game || game.state !== 'playing') return cb({ success: false });
-
-    clearTimer(game);
-    const next = game.currentQuestion + 1;
-    if (next >= game.questions.length) {
-      endGame(currentRoom);
-      return cb({ success: true, message: 'Spiel beendet' });
-    }
-    game.currentQuestion = next;
-    startQuestion(currentRoom);
-    cb({ success: true });
-  });
-
-  // Admin: Spiel zurücksetzen
-  socket.on('resetGame', (cb) => {
-    if (typeof cb !== 'function') cb = () => {};
-    if (!socket.adminRoom) return cb({ success: false });
-    const game = getGame(currentRoom);
-    if (!game) return cb({ success: false });
-
-    clearTimer(game);
-    game.state = 'waiting';
-    game.currentQuestion = -1;
-    game.answers = {};
-    game.timeLeft = 0;
-    game.participants.forEach(p => p.score = 0);
-
-    io.to(currentRoom).emit('gameReset');
-    cb({ success: true });
-  });
-
-  // === Spieler: Beitreten ===
-  socket.on('joinGame', (data, cb) => {
-    if (typeof cb !== 'function') cb = () => {};
-    const { name, code } = data;
-    if (!name || !code) 
-      return cb({ success: false, error: 'Name und Code erforderlich' });
-
-    const upperCode = code.toUpperCase().trim();
-    const game = getGame(upperCode);
-
-    if (game.state === 'finished') 
-      return cb({ success: false, error: 'Spiel bereits beendet' });
-    if (game.participants.find(p => p.name === name)) 
-      return cb({ success: false, error: 'Name bereits vergeben' });
-    if (game.participants.length >= 50) 
-      return cb({ success: false, error: 'Raum ist voll (max. 50)' });
-
-    socket.join(upperCode);
-    currentRoom = upperCode;
-    playerName = name;
-    game.participants.push({ id: socket.id, name, score: 0 });
-
-    cb({ success: true, state: game.state });
-    io.to(upperCode).emit('participantJoined', { 
-      count: game.participants.length,
-      name: name 
+    // Admin Login
+    socket.on('adminLogin', (data, callback) => {
+        if (typeof callback !== 'function') return;
+        if (data.password === ADMIN_PASSWORD) {
+            socket.isAdmin = true;
+            callback({ success: true });
+        } else {
+            callback({ success: false, error: 'Falsches Passwort' });
+        }
     });
 
-    if (game.state === 'playing') {
-      sendQuestionToSocket(socket, game);
-    }
-  });
+    // Raum erstellen
+    socket.on('createRoom', (data, callback) => {
+        if (typeof callback !== 'function') return;
+        if (!socket.isAdmin) return callback({ success: false, error: 'Nicht autorisiert' });
 
-  // === Spieler: Antwort einreichen ===
-  socket.on('submitAnswer', (data, cb) => {
-    if (typeof cb !== 'function') cb = () => {};
-    const game = getGame(currentRoom);
-    if (!game || game.state !== 'playing') 
-      return cb({ success: false, error: 'Kein aktives Spiel' });
-    if (data.questionIndex !== game.currentQuestion) 
-      return cb({ success: false, error: 'Falsche Frage' });
-    if (game.answers[socket.id]) 
-      return cb({ success: false, error: 'Bereits geantwortet' });
+        const code = generateCode();
+        games[code] = {
+            code,
+            adminSocket: socket.id,
+            players: {},
+            questions: [],
+            currentQuestion: 0,
+            state: 'waiting',
+            answers: {}
+        };
 
-    const q = game.questions[game.currentQuestion];
-    const correct = (data.answer === q.correct);
+        socket.join(code);
+        socket.gameCode = code;
+        console.log('Raum erstellt:', code);
+        callback({ success: true, code });
+    });
 
-    const timeLeft = game.timeLeft;
-    const points = correct 
-      ? Math.max(100, Math.floor(200 * (timeLeft / game.maxTime))) 
-      : 0;
+    // Frage hinzufügen
+    socket.on('addQuestion', (data, callback) => {
+        if (typeof callback !== 'function') return;
+        const game = games[socket.gameCode];
+        if (!game) return callback({ success: false, error: 'Kein Raum' });
 
-    game.answers[socket.id] = { 
-      answer: data.answer, 
-      correct, 
-      points 
-    };
+        const question = {
+            id: Date.now(),
+            text: data.text,
+            options: data.options,
+            correct: data.correct,
+            image: data.image || null
+        };
 
-    const participant = game.participants.find(p => p.id === socket.id);
-    if (participant) participant.score += points;
+        game.questions.push(question);
+        callback({ success: true, question });
+    });
 
-    cb({ success: true, correct, points });
+    // Frage löschen
+    socket.on('deleteQuestion', (data, callback) => {
+        if (typeof callback !== 'function') return;
+        const game = games[socket.gameCode];
+        if (!game) return callback({ success: false, error: 'Kein Raum' });
 
-    const answerStats = getAnswerStats(game);
-    if (answerStats) {
-      io.to(currentRoom).emit('answerStats', answerStats);
-    }
+        game.questions = game.questions.filter(q => q.id !== data.id);
+        callback({ success: true });
+    });
 
-    const answeredCount = Object.keys(game.answers).length;
-    if (answeredCount >= game.participants.length) {
-      clearTimer(game);
-      endQuestion(currentRoom);
-    }
-  });
+    // Frage bearbeiten
+    socket.on('editQuestion', (data, callback) => {
+        if (typeof callback !== 'function') return;
+        const game = games[socket.gameCode];
+        if (!game) return callback({ success: false, error: 'Kein Raum' });
 
-  // === Disconnect ===
-  socket.on('disconnect', () => {
-    if (currentRoom) {
-      const game = getGame(currentRoom);
-      if (game) {
-        game.participants = game.participants.filter(
-          p => p.id !== socket.id
+        const index = game.questions.findIndex(q => q.id === data.id);
+        if (index === -1) return callback({ success: false, error: 'Frage nicht gefunden' });
+
+        game.questions[index] = {
+            ...game.questions[index],
+            text: data.text,
+            options: data.options,
+            correct: data.correct,
+            image: data.image || null
+        };
+
+        callback({ success: true, question: game.questions[index] });
+    });
+
+    // Spiel starten
+    socket.on('startGame', (data, callback) => {
+        if (typeof callback !== 'function') return;
+        const game = games[socket.gameCode];
+        if (!game) return callback({ success: false, error: 'Kein Raum' });
+        if (game.questions.length === 0) return callback({ success: false, error: 'Keine Fragen!' });
+
+        game.state = 'playing';
+        game.currentQuestion = 0;
+        game.answers = {};
+
+        sendQuestion(game);
+        callback({ success: true });
+    });
+
+    // Nächste Frage
+    socket.on('nextQuestion', (data, callback) => {
+        if (typeof callback !== 'function') return;
+        const game = games[socket.gameCode];
+        if (!game) return callback({ success: false, error: 'Kein Raum' });
+
+        game.currentQuestion++;
+
+        if (game.currentQuestion >= game.questions.length) {
+            game.state = 'finished';
+            const leaderboard = getLeaderboard(game);
+            io.to(game.code).emit('gameFinished', { leaderboard });
+            callback({ success: true, finished: true });
+        } else {
+            game.answers = {};
+            sendQuestion(game);
+            callback({ success: true, finished: false });
+        }
+    });
+
+    // Spiel zurücksetzen
+    socket.on('resetGame', (data, callback) => {
+        if (typeof callback !== 'function') return;
+        const game = games[socket.gameCode];
+        if (!game) return callback({ success: false, error: 'Kein Raum' });
+
+        game.state = 'waiting';
+        game.currentQuestion = 0;
+        game.answers = {};
+        Object.values(game.players).forEach(p => p.score = 0);
+
+        io.to(game.code).emit('gameReset');
+        callback({ success: true });
+    });
+
+    // Spiel beitreten
+    socket.on('joinGame', (data, callback) => {
+        if (typeof callback !== 'function') return;
+
+        const { name, code } = data;
+
+        if (!name || !name.trim()) {
+            return callback({ success: false, error: 'Name erforderlich' });
+        }
+
+        if (!code || !code.trim()) {
+            return callback({ success: false, error: 'Kein Raumcode' });
+        }
+
+        const gameCode = code.trim().toUpperCase();
+        const game = games[gameCode];
+
+        if (!game) {
+            return callback({ success: false, error: 'Raum nicht gefunden' });
+        }
+
+        if (game.state === 'finished') {
+            return callback({ success: false, error: 'Spiel bereits beendet' });
+        }
+
+        if (Object.keys(game.players).length >= 50) {
+            return callback({ success: false, error: 'Raum ist voll (max 50)' });
+        }
+
+        const playerName = name.trim();
+        const nameTaken = Object.values(game.players).some(
+            p => p.name.toLowerCase() === playerName.toLowerCase()
         );
-        delete game.answers[socket.id];
 
-        io.to(currentRoom).emit('participantJoined', { 
-          count: game.participants.length 
+        if (nameTaken) {
+            return callback({ success: false, error: 'Name bereits vergeben' });
+        }
+
+        // Spieler hinzufügen
+        game.players[socket.id] = {
+            id: socket.id,
+            name: playerName,
+            score: 0
+        };
+
+        socket.join(gameCode);
+        socket.gameCode = gameCode;
+        socket.playerName = playerName;
+
+        // Admin benachrichtigen
+        io.to(game.adminSocket).emit('playerJoined', {
+            players: Object.values(game.players)
         });
 
-        if (game.participants.length === 0 && game.state === 'playing') {
-          clearTimer(game);
-          game.state = 'waiting';
-          game.currentQuestion = -1;
-          io.to(currentRoom).emit('gameReset');
+        console.log(`${playerName} ist Raum ${gameCode} beigetreten`);
+        callback({ success: true, name: playerName });
+    });
+
+    // Antwort einreichen
+    socket.on('submitAnswer', (data, callback) => {
+        if (typeof callback !== 'function') return;
+
+        const game = games[socket.gameCode];
+        if (!game || game.state !== 'playing') {
+            return callback({ success: false, error: 'Kein aktives Spiel' });
         }
-      }
-    }
-  });
+
+        const player = game.players[socket.id];
+        if (!player) return callback({ success: false, error: 'Spieler nicht gefunden' });
+
+        const question = game.questions[game.currentQuestion];
+        if (!question) return callback({ success: false, error: 'Keine Frage aktiv' });
+
+        // Bereits geantwortet?
+        if (game.answers[socket.id]) {
+            return callback({ success: false, error: 'Bereits geantwortet' });
+        }
+
+        const isCorrect = data.answer === question.correct;
+        const timeLeft = data.timeLeft || 0;
+        const maxTime = 20;
+        const score = isCorrect ? Math.max(100, Math.floor(200 * (timeLeft / maxTime))) : 0;
+
+        game.answers[socket.id] = {
+            answer: data.answer,
+            correct: isCorrect,
+            score
+        };
+
+        if (isCorrect) player.score += score;
+
+        // Antwort-Statistiken
+        const stats = getAnswerStats(game, question);
+
+        // Admin Update
+        io.to(game.adminSocket).emit('answerUpdate', {
+            stats,
+            totalAnswers: Object.keys(game.answers).length,
+            totalPlayers: Object.keys(game.players).length
+        });
+
+        callback({ success: true, correct: isCorrect, score });
+    });
+
+    // Disconnect
+    socket.on('disconnect', () => {
+        if (socket.gameCode && games[socket.gameCode]) {
+            const game = games[socket.gameCode];
+            if (game.players[socket.id]) {
+                delete game.players[socket.id];
+                io.to(game.adminSocket).emit('playerJoined', {
+                    players: Object.values(game.players)
+                });
+            }
+        }
+        console.log('Getrennt:', socket.id);
+    });
 });
 
-// Upload-Route
-app.post('/upload', upload.single('image'), (req, res) => {
-  if (!req.file) return res.status(400).json({ success: false });
-  res.json({ 
-    success: true, 
-    url: '/uploads/' + req.file.filename 
-  });
-});
+// Hilfsfunktionen
+function sendQuestion(game) {
+    const question = game.questions[game.currentQuestion];
+    const maxTime = 20;
 
-// Upload Fehler-Handler
-app.use((err, req, res, next) => {
-  if (err.message === 'Nur Bilder erlaubt!') {
-    return res.status(400).json({ success: false, error: err.message });
-  }
-  next(err);
-});
+    const questionData = {
+        index: game.currentQuestion,
+        total: game.questions.length,
+        text: question.text,
+        options: question.options,
+        image: question.image,
+        timeLeft: maxTime
+    };
+
+    io.to(game.code).emit('newQuestion', questionData);
+
+    // Timer
+    let timeLeft = maxTime;
+    if (game.timer) clearInterval(game.timer);
+
+    game.timer = setInterval(() => {
+        timeLeft--;
+        io.to(game.code).emit('timerUpdate', { timeLeft });
+
+        if (timeLeft <= 0) {
+            clearInterval(game.timer);
+            game.timer = null;
+
+            const question = game.questions[game.currentQuestion];
+            const stats = getAnswerStats(game, question);
+            const leaderboard = getLeaderboard(game);
+
+            io.to(game.code).emit('questionEnd', {
+                correct: question.correct,
+                stats,
+                leaderboard
+            });
+        }
+    }, 1000);
+}
+
+function getAnswerStats(game, question) {
+    const stats = {};
+    question.options.forEach((_, i) => stats[i] = 0);
+
+    Object.values(game.answers).forEach(a => {
+        if (stats[a.answer] !== undefined) stats[a.answer]++;
+    });
+
+    return stats;
+}
+
+function getLeaderboard(game) {
+    return Object.values(game.players)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10)
+        .map((p, i) => ({ rank: i + 1, name: p.name, score: p.score }));
+}
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => 
-  console.log(`✅ PollWave Server läuft auf Port ${PORT}`)
-);
+server.listen(PORT, () => console.log(`Server läuft auf Port ${PORT}`));
