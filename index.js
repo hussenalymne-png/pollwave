@@ -9,7 +9,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-// ✅ FIX 1: uploads/ Ordner automatisch erstellen
+// uploads/ Ordner automatisch erstellen
 if (!fs.existsSync('uploads')) {
   fs.mkdirSync('uploads');
 }
@@ -22,7 +22,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ 
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // Max 5MB
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = /jpeg|jpg|png|gif|webp/;
     const ext = allowed.test(
@@ -36,7 +36,6 @@ const upload = multer({
 app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
 
-// ✅ FIX 4: Explizite /admin Route
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
@@ -72,7 +71,7 @@ function generateRoomCode() {
   return code;
 }
 
-// ✅ Hilfsfunktion: Antwort-Statistiken berechnen
+// Antwort-Statistiken berechnen
 function getAnswerStats(game) {
   const q = game.questions[game.currentQuestion];
   if (!q) return null;
@@ -92,7 +91,6 @@ function getAnswerStats(game) {
     }
   });
 
-  // Prozentsätze berechnen
   if (totalAnswers > 0) {
     stats.forEach(s => {
       s.percentage = Math.round((s.count / totalAnswers) * 100);
@@ -108,15 +106,15 @@ function getAnswerStats(game) {
   };
 }
 
-// ✅ Hilfsfunktion: Leaderboard
+// Leaderboard
 function getLeaderboard(game) {
   return game.participants
     .map(p => ({ name: p.name, score: p.score }))
     .sort((a, b) => b.score - a.score)
-    .slice(0, 10); // Top 10
+    .slice(0, 10);
 }
 
-// ✅ Hilfsfunktion: Timer stoppen
+// Timer stoppen
 function clearTimer(game) {
   if (game.timerInterval) {
     clearInterval(game.timerInterval);
@@ -124,7 +122,7 @@ function clearTimer(game) {
   }
 }
 
-// ✅ Hilfsfunktion: Frage starten
+// Frage starten
 function startQuestion(room) {
   const game = getGame(room);
   if (!game) return;
@@ -147,13 +145,11 @@ function startQuestion(room) {
   io.to(room).emit('questionStarted', questionData);
   io.to(room).emit('leaderboardUpdate', getLeaderboard(game));
 
-  // Timer starten
   clearTimer(game);
   game.timerInterval = setInterval(() => {
     game.timeLeft--;
     io.to(room).emit('timerUpdate', { time: game.timeLeft });
 
-    // ✅ FIX 3: Live Antwort-Stats alle Sekunde an Admin
     const answerStats = getAnswerStats(game);
     if (answerStats) {
       io.to(room).emit('answerStats', answerStats);
@@ -166,14 +162,13 @@ function startQuestion(room) {
   }, 1000);
 }
 
-// ✅ Hilfsfunktion: Frage beenden
+// Frage beenden
 function endQuestion(room) {
   const game = getGame(room);
   if (!game) return;
   const q = game.questions[game.currentQuestion];
   if (!q) return;
 
-  // Nicht-Antworter als falsch markieren
   game.participants.forEach(p => {
     if (!game.answers[p.id]) {
       game.answers[p.id] = { answer: -1, correct: false, points: 0 };
@@ -187,9 +182,8 @@ function endQuestion(room) {
   });
   io.to(room).emit('leaderboardUpdate', getLeaderboard(game));
 
-  // Nach 3 Sekunden nächste Frage oder Ende
   setTimeout(() => {
-    const game = getGame(room); // Neu holen (sicher)
+    const game = getGame(room);
     if (!game || game.state !== 'playing') return;
     const next = game.currentQuestion + 1;
     if (next >= game.questions.length) {
@@ -201,7 +195,7 @@ function endQuestion(room) {
   }, 3000);
 }
 
-// ✅ Hilfsfunktion: Spiel beenden
+// Spiel beenden
 function endGame(room) {
   const game = getGame(room);
   if (!game) return;
@@ -210,7 +204,7 @@ function endGame(room) {
   io.to(room).emit('gameFinished', getLeaderboard(game));
 }
 
-// ✅ Hilfsfunktion: Frage an einzelnen Socket senden
+// Frage an einzelnen Socket senden
 function sendQuestionToSocket(socket, game) {
   const q = game.questions[game.currentQuestion];
   if (!q) return;
@@ -231,9 +225,9 @@ io.on('connection', (socket) => {
 
   // === Admin Login ===
   socket.on('adminLogin', (data, cb) => {
+    if (typeof cb !== 'function') cb = () => {};
     const { code } = data;
     if (!code) {
-      // Neuen Raum erstellen
       const newCode = generateRoomCode();
       const game = getGame(newCode);
       game.state = 'waiting';
@@ -247,7 +241,6 @@ io.on('connection', (socket) => {
         questions: game.questions 
       });
     } else {
-      // Bestehendem Raum beitreten
       const upperCode = code.toUpperCase();
       const game = getGame(upperCode);
       socket.join(upperCode);
@@ -265,6 +258,7 @@ io.on('connection', (socket) => {
 
   // Admin: Frage hinzufügen
   socket.on('addQuestion', (data, cb) => {
+    if (typeof cb !== 'function') cb = () => {};
     if (!socket.adminRoom) return cb({ success: false, error: 'Kein Admin' });
     const game = getGame(currentRoom);
     if (!game) return cb({ success: false, error: 'Kein Raum' });
@@ -285,6 +279,7 @@ io.on('connection', (socket) => {
 
   // Admin: Frage löschen
   socket.on('deleteQuestion', (index, cb) => {
+    if (typeof cb !== 'function') cb = () => {};
     if (!socket.adminRoom) return cb({ success: false });
     const game = getGame(currentRoom);
     if (!game) return cb({ success: false });
@@ -298,6 +293,7 @@ io.on('connection', (socket) => {
 
   // Admin: Spiel starten
   socket.on('startGame', (cb) => {
+    if (typeof cb !== 'function') cb = () => {};
     if (!socket.adminRoom) return cb({ success: false });
     const game = getGame(currentRoom);
     if (!game || game.questions.length === 0) 
@@ -307,7 +303,6 @@ io.on('connection', (socket) => {
 
     game.state = 'playing';
     game.currentQuestion = 0;
-    // Alle Punkte zurücksetzen
     game.participants.forEach(p => p.score = 0);
     startQuestion(currentRoom);
     cb({ success: true });
@@ -315,6 +310,7 @@ io.on('connection', (socket) => {
 
   // Admin: Nächste Frage
   socket.on('nextQuestion', (cb) => {
+    if (typeof cb !== 'function') cb = () => {};
     if (!socket.adminRoom) return cb({ success: false });
     const game = getGame(currentRoom);
     if (!game || game.state !== 'playing') return cb({ success: false });
@@ -330,8 +326,9 @@ io.on('connection', (socket) => {
     cb({ success: true });
   });
 
-  // ✅ FIX 5: Admin: Spiel zurücksetzen
+  // Admin: Spiel zurücksetzen
   socket.on('resetGame', (cb) => {
+    if (typeof cb !== 'function') cb = () => {};
     if (!socket.adminRoom) return cb({ success: false });
     const game = getGame(currentRoom);
     if (!game) return cb({ success: false });
@@ -341,7 +338,6 @@ io.on('connection', (socket) => {
     game.currentQuestion = -1;
     game.answers = {};
     game.timeLeft = 0;
-    // Punkte zurücksetzen
     game.participants.forEach(p => p.score = 0);
 
     io.to(currentRoom).emit('gameReset');
@@ -350,6 +346,7 @@ io.on('connection', (socket) => {
 
   // === Spieler: Beitreten ===
   socket.on('joinGame', (data, cb) => {
+    if (typeof cb !== 'function') cb = () => {};
     const { name, code } = data;
     if (!name || !code) 
       return cb({ success: false, error: 'Name und Code erforderlich' });
@@ -375,7 +372,6 @@ io.on('connection', (socket) => {
       name: name 
     });
 
-    // Falls Spiel schon läuft → aktuelle Frage senden
     if (game.state === 'playing') {
       sendQuestionToSocket(socket, game);
     }
@@ -383,6 +379,7 @@ io.on('connection', (socket) => {
 
   // === Spieler: Antwort einreichen ===
   socket.on('submitAnswer', (data, cb) => {
+    if (typeof cb !== 'function') cb = () => {};
     const game = getGame(currentRoom);
     if (!game || game.state !== 'playing') 
       return cb({ success: false, error: 'Kein aktives Spiel' });
@@ -394,7 +391,6 @@ io.on('connection', (socket) => {
     const q = game.questions[game.currentQuestion];
     const correct = (data.answer === q.correct);
 
-    // ✅ FIX 2: Server-seitige timeLeft (nicht vom Client!)
     const timeLeft = game.timeLeft;
     const points = correct 
       ? Math.max(100, Math.floor(200 * (timeLeft / game.maxTime))) 
@@ -411,13 +407,11 @@ io.on('connection', (socket) => {
 
     cb({ success: true, correct, points });
 
-    // ✅ Live Stats an Admin senden
     const answerStats = getAnswerStats(game);
     if (answerStats) {
       io.to(currentRoom).emit('answerStats', answerStats);
     }
 
-    // Alle haben geantwortet → vorzeitig beenden
     const answeredCount = Object.keys(game.answers).length;
     if (answeredCount >= game.participants.length) {
       clearTimer(game);
@@ -430,7 +424,6 @@ io.on('connection', (socket) => {
     if (currentRoom) {
       const game = getGame(currentRoom);
       if (game) {
-        // Spieler entfernen
         game.participants = game.participants.filter(
           p => p.id !== socket.id
         );
@@ -440,7 +433,6 @@ io.on('connection', (socket) => {
           count: game.participants.length 
         });
 
-        // Wenn alle weg → Raum pausieren
         if (game.participants.length === 0 && game.state === 'playing') {
           clearTimer(game);
           game.state = 'waiting';
