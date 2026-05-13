@@ -91,7 +91,8 @@ body { font-family: 'Segoe UI', sans-serif; background: #0a0a1a; color: white; m
     <h1>🌊 PollWave</h1>
     <p>Tritt dem Quiz bei!</p>
     <input type="text" id="nameInput" placeholder="Dein Name" maxlength="20">
-    <input type="text" id="codeInput" placeholder="Room Code (z.B. X3PL2U)" maxlength="6" style="text-transform:uppercase;">
+    <input type="text" id="codeInput" placeholder="Room Code (z.B. X3PL2U)" maxlength="6" 
+           style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
     <button onclick="joinGame()">Beitreten 🚀</button>
     <div class="error-msg" id="joinError"></div>
   </div>
@@ -101,6 +102,299 @@ body { font-family: 'Segoe UI', sans-serif; background: #0a0a1a; color: white; m
 <div class="waiting-screen" id="waitingScreen">
   <div class="player-name-display">👤 <span id="playerNameDisplay"></span></div>
   <h2>Warte auf den Start...</h2>
-  <div class="room-code pulse" id="roomCodeDisplay">X3PL2U</div>
+  <div class="room-code pulse" id="roomCodeDisplay"></div>
   <p style="opacity:0.5;">Zeig diesen Code deinen Freunden!</p>
-  <div class="participants
+  <div class="participants-count" id="participantsCount">👥 1 Spieler wartet</div>
+</div>
+
+<!-- QUESTION SCREEN -->
+<div class="question-screen" id="questionScreen">
+  <div class="q-header">
+    <div class="q-progress" id="qProgress">Frage 1 / 5</div>
+    <div class="q-timer" id="qTimer">20</div>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill" style="width:100%"></div>
+  </div>
+  <div class="question-text" id="questionText">Frage lädt...</div>
+  <img class="question-image" id="questionImage" src="" alt="" style="display:none;">
+  <div class="options-grid" id="optionsGrid"></div>
+</div>
+
+<!-- RESULT SCREEN -->
+<div class="result-screen" id="resultScreen">
+  <div class="result-icon" id="resultIcon">✅</div>
+  <div class="result-title" id="resultTitle">Richtig!</div>
+  <div class="points-earned" id="pointsEarned">+500</div>
+  <div class="total-score" id="totalScore">Gesamt: 500 Punkte</div>
+</div>
+
+<!-- LEADERBOARD SCREEN -->
+<div class="leaderboard-screen" id="leaderboardScreen">
+  <h2>🏆 Rangliste</h2>
+  <div class="lb-list" id="lbList"></div>
+</div>
+
+<!-- FINISH SCREEN -->
+<div class="finish-screen" id="finishScreen">
+  <canvas class="confetti" id="confettiCanvas"></canvas>
+  <h1>🎉 Spiel beendet!</h1>
+  <div id="finishRank" style="font-size:1.5rem; opacity:0.7; margin-bottom:10px;"></div>
+  <div class="final-score" id="finalScore">0 Punkte</div>
+  <div id="finishLeaderboard" style="width:100%; max-width:500px; margin-top:30px;"></div>
+</div>
+
+<!-- POINTS POPUP -->
+<div class="points-popup" id="pointsPopup">+0</div>
+
+<script>
+const socket = io();
+let myName = '';
+let myRoom = '';
+let myScore = 0;
+let timerInterval = null;
+let hasAnswered = false;
+let currentTimeLeft = 20;
+const MAX_TIME = 20;
+
+// ── SCREENS ──────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.join-screen,.waiting-screen,.question-screen,.result-screen,.leaderboard-screen,.finish-screen')
+    .forEach(el => el.style.display = 'none');
+  const el = document.getElementById(id);
+  if (el) {
+    el.style.display = 'flex';
+    el.style.flexDirection = 'column';
+  }
+}
+
+// ── JOIN ─────────────────────────────────────────────────
+function joinGame() {
+  const name = document.getElementById('nameInput').value.trim();
+  const code = document.getElementById('codeInput').value.trim().toUpperCase();
+  const err  = document.getElementById('joinError');
+
+  if (!name) { err.textContent = 'Bitte gib deinen Namen ein.'; return; }
+  if (name.length < 2) { err.textContent = 'Name muss mindestens 2 Zeichen haben.'; return; }
+  if (!code || code.length !== 6) { err.textContent = 'Bitte gib einen 6-stelligen Room Code ein.'; return; }
+
+  err.textContent = '';
+  myName = name;
+  myRoom = code;
+  socket.emit('joinGame', { name, roomCode: code });
+}
+
+// Enter-Taste
+document.addEventListener('keypress', e => {
+  if (e.key === 'Enter' && document.getElementById('joinScreen').style.display !== 'none') {
+    joinGame();
+  }
+});
+
+// ── SOCKET EVENTS ─────────────────────────────────────────
+socket.on('joinError', msg => {
+  document.getElementById('joinError').textContent = msg;
+});
+
+socket.on('joinSuccess', data => {
+  myName = data.name;
+  myRoom = data.roomCode;
+  document.getElementById('playerNameDisplay').textContent = myName;
+  document.getElementById('roomCodeDisplay').textContent   = myRoom;
+  showScreen('waitingScreen');
+});
+
+socket.on('playerCount', count => {
+  const txt = count === 1 ? '👥 1 Spieler wartet' : `👥 ${count} Spieler warten`;
+  document.getElementById('participantsCount').textContent = txt;
+});
+
+socket.on('gameStarted', () => {
+  myScore = 0;
+  showScreen('questionScreen');
+});
+
+socket.on('newQuestion', data => {
+  hasAnswered = false;
+  currentTimeLeft = MAX_TIME;
+  showScreen('questionScreen');
+
+  document.getElementById('qProgress').textContent = `Frage ${data.questionIndex + 1} / ${data.totalQuestions}`;
+  document.getElementById('questionText').textContent = data.question;
+
+  // Bild
+  const img = document.getElementById('questionImage');
+  if (data.image) {
+    img.src = data.image;
+    img.style.display = 'block';
+  } else {
+    img.style.display = 'none';
+  }
+
+  // Antwortoptionen
+  const grid = document.getElementById('optionsGrid');
+  grid.innerHTML = '';
+  const letters = ['A','B','C','D'];
+  data.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<span class="option-letter">${letters[i]}</span>${opt}`;
+    btn.onclick = () => submitAnswer(i, btn);
+    grid.appendChild(btn);
+  });
+
+  // Timer starten
+  clearInterval(timerInterval);
+  updateTimer(MAX_TIME);
+  timerInterval = setInterval(() => {
+    currentTimeLeft--;
+    updateTimer(currentTimeLeft);
+    if (currentTimeLeft <= 0) {
+      clearInterval(timerInterval);
+      disableOptions();
+    }
+  }, 1000);
+});
+
+function updateTimer(t) {
+  const el = document.getElementById('qTimer');
+  el.textContent = t;
+  el.classList.toggle('urgent', t <= 5);
+  const pct = (t / MAX_TIME) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function disableOptions() {
+  document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+}
+
+function submitAnswer(index, btn) {
+  if (hasAnswered) return;
+  hasAnswered = true;
+  clearInterval(timerInterval);
+  disableOptions();
+  btn.classList.add('selected');
+  socket.emit('submitAnswer', {
+    roomCode: myRoom,
+    answer: index,
+    timeLeft: currentTimeLeft
+  });
+}
+
+socket.on('answerResult', data => {
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach((b, i) => {
+    if (i === data.correctAnswer) b.classList.add('correct');
+    else if (i === data.playerAnswer && !data.correct) b.classList.add('wrong');
+  });
+
+  setTimeout(() => {
+    const earned = data.pointsEarned || 0;
+    myScore = data.totalScore || myScore;
+    showResultScreen(data.correct, earned);
+  }, 1500);
+});
+
+function showResultScreen(correct, earned) {
+  showScreen('resultScreen');
+  document.getElementById('resultIcon').textContent  = correct ? '✅' : '❌';
+  document.getElementById('resultTitle').textContent = correct ? 'Richtig!' : 'Falsch!';
+  document.getElementById('pointsEarned').textContent = correct ? `+${earned}` : '+0';
+  document.getElementById('totalScore').textContent   = `Gesamt: ${myScore} Punkte`;
+
+  if (correct && earned > 0) showPointsPopup(earned);
+}
+
+function showPointsPopup(pts) {
+  const el = document.getElementById('pointsPopup');
+  el.textContent = `+${pts}`;
+  el.classList.remove('show');
+  void el.offsetWidth; // reflow
+  el.classList.add('show');
+}
+
+socket.on('showLeaderboard', data => {
+  showScreen('leaderboardScreen');
+  const list = document.getElementById('lbList');
+  list.innerHTML = '';
+  const medals = ['🥇','🥈','🥉'];
+
+  data.leaderboard.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.className = 'lb-item' + (p.name === myName ? ' my-rank' : '');
+    div.innerHTML = `
+      <div class="lb-rank">${medals[i] || (i+1)}</div>
+      <div class="lb-name">${p.name}</div>
+      <div class="lb-score">${p.score} Pkt</div>`;
+    list.appendChild(div);
+  });
+});
+
+socket.on('gameFinished', data => {
+  clearInterval(timerInterval);
+  showScreen('finishScreen');
+
+  const me = data.leaderboard.find(p => p.name === myName);
+  const rank = me ? data.leaderboard.indexOf(me) + 1 : '?';
+  const score = me ? me.score : myScore;
+
+  document.getElementById('finalScore').textContent = `${score} Punkte`;
+  document.getElementById('finishRank').textContent  = `Platz ${rank} von ${data.leaderboard.length}`;
+
+  // Finales Leaderboard
+  const lb = document.getElementById('finishLeaderboard');
+  lb.innerHTML = '<h3 style="text-align:center;margin-bottom:15px;">🏆 Endstand</h3>';
+  const medals = ['🥇','🥈','🥉'];
+  data.leaderboard.slice(0, 10).forEach((p, i) => {
+    lb.innerHTML += `
+      <div class="lb-item${p.name === myName ? ' my-rank' : ''}" 
+           style="background:rgba(255,255,255,0.07);padding:12px 20px;border-radius:10px;
+                  display:flex;align-items:center;gap:15px;margin-bottom:8px;">
+        <span style="width:35px;text-align:center;">${medals[i] || (i+1)}</span>
+        <span style="flex:1;">${p.name}</span>
+        <span style="color:#667eea;font-weight:bold;">${p.score} Pkt</span>
+      </div>`;
+  });
+
+  // Konfetti für Top 3
+  if (rank <= 3) startConfetti();
+});
+
+// ── KONFETTI ──────────────────────────────────────────────
+function startConfetti() {
+  const canvas = document.getElementById('confettiCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const pieces = Array.from({length: 150}, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height - canvas.height,
+    w: Math.random() * 10 + 5,
+    h: Math.random() * 6 + 3,
+    color: ['#667eea','#764ba2','#f093fb','#38ef7d','#ffd700'][Math.floor(Math.random()*5)],
+    speed: Math.random() * 3 + 1,
+    angle: Math.random() * 360,
+    spin:  Math.random() * 5 - 2.5
+  }));
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(p => {
+      ctx.save();
+      ctx.translate(p.x + p.w/2, p.y + p.h/2);
+      ctx.rotate(p.angle * Math.PI/180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      ctx.restore();
+      p.y     += p.speed;
+      p.angle += p.spin;
+      if (p.y > canvas.height) { p.y = -p.h; p.x = Math.random() * canvas.width; }
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+</script>
+</body>
+</html>

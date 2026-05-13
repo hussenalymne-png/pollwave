@@ -1,242 +1,1567 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PollWave – Admin</title>
-<script src="/socket.io/socket.io.js"></script>
-<style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:'Segoe UI',sans-serif; background:#0a0a1a; color:white; min-height:100vh; padding:20px; }
-.container { max-width:1000px; margin:0 auto; }
-h1 { font-size:2.5rem; margin-bottom:20px; background:linear-gradient(135deg,#667eea,#764ba2); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-h2 { margin:20px 0 10px; }
-.grid { display:grid; grid-template-columns:1fr 1fr; gap:30px; }
-.card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:20px; }
-label { display:block; margin:10px 0 5px; opacity:0.7; }
-input, textarea, select { width:100%; padding:12px; margin-bottom:10px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:white; font-size:1rem; }
-textarea { resize:vertical; min-height:80px; }
-button { padding:12px 24px; border:none; border-radius:10px; cursor:pointer; font-weight:bold; font-size:1rem; transition:0.2s; }
-button.primary { background:linear-gradient(135deg,#667eea,#764ba2); color:white; }
-button.primary:hover { transform:scale(1.03); }
-button.danger { background:#ff5757; color:white; }
-button.secondary { background:rgba(255,255,255,0.1); color:white; }
-.options-row { display:flex; gap:10px; align-items:center; }
-.options-row input { flex:1; }
-.question-item { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
-.question-item span { flex:1; }
-.room-code-display { font-size:2rem; letter-spacing:6px; color:#667eea; margin:10px 0; }
-.toolbar { display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
-#livePreview { border:1px solid #667eea; border-radius:12px; padding:20px; text-align:center; margin-top:20px; }
-#livePreview img { max-width:100%; max-height:150px; object-fit:contain; border-radius:8px; margin-bottom:10px; }
-#livePreview .options { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-#livePreview .option { padding:15px; border-radius:10px; background:rgba(255,255,255,0.1); }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PollWave – Admin</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d2e;
+      --surface2:  #252840;
+      --accent:    #7c5cfc;
+      --accent2:   #5eead4;
+      --danger:    #f43f5e;
+      --success:   #22c55e;
+      --warning:   #f59e0b;
+      --text:      #e2e8f0;
+      --muted:     #64748b;
+      --border:    #2d3148;
+      --radius:    12px;
+      --shadow:    0 4px 24px rgba(0,0,0,0.4);
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ===== SCREENS ===== */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ===== LOGIN SCREEN ===== */
+    #loginScreen {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    #loginScreen.active {
+      display: flex;
+    }
+
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .logo {
+      font-size: 2.4rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .login-card p {
+      color: var(--muted);
+      margin-bottom: 32px;
+      font-size: 0.95rem;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: var(--radius);
+      border: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #9b74ff);
+      color: #fff;
+    }
+    .btn-primary:hover:not(:disabled) { 
+      transform: translateY(-2px); 
+      box-shadow: 0 8px 20px rgba(124,92,252,0.4);
+    }
+
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover:not(:disabled) { 
+      background: var(--border); 
+      transform: translateY(-1px);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, var(--danger), #fb7185);
+      color: #fff;
+    }
+    .btn-danger:hover:not(:disabled) { 
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(244,63,94,0.4);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, var(--success), #4ade80);
+      color: #fff;
+    }
+    .btn-success:hover:not(:disabled) { 
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(34,197,94,0.4);
+    }
+
+    .btn-warning {
+      background: linear-gradient(135deg, var(--warning), #fbbf24);
+      color: #000;
+    }
+    .btn-warning:hover:not(:disabled) { transform: translateY(-2px); }
+
+    .btn-sm { padding: 7px 14px; font-size: 0.82rem; }
+    .btn-lg { padding: 16px 32px; font-size: 1.05rem; }
+
+    /* ===== INPUTS ===== */
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+      text-align: left;
+    }
+    .input-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 11px 14px;
+      color: var(--text);
+      font-size: 0.95rem;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+    }
+    textarea { resize: vertical; min-height: 80px; }
+
+    /* ===== DASHBOARD LAYOUT ===== */
+    #dashScreen {
+      display: none;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    #dashScreen.active { display: flex; }
+
+    /* ===== HEADER ===== */
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .header-logo {
+      font-size: 1.4rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .room-badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .room-code-display {
+      font-family: monospace;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent2);
+      letter-spacing: 0.15em;
+    }
+
+    .copy-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 0.8rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: color 0.2s;
+    }
+    .copy-btn:hover { color: var(--accent2); }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .participant-count {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ===== MAIN CONTENT ===== */
+    .main-content {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 0;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 24px;
+      gap: 24px;
+    }
+
+    /* ===== LEFT PANEL ===== */
+    .left-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ===== CARDS ===== */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ===== CONTROL PANEL ===== */
+    .control-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+    }
+
+    /* ===== LIVE STATUS ===== */
+    .live-status {
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .live-status.visible { display: flex; }
+
+    .question-display {
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .question-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .question-text {
+      font-size: 1.1rem;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    /* ===== TIMER ===== */
+    .timer-ring-wrap {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .timer-ring {
+      position: relative;
+      width: 72px;
+      height: 72px;
+      flex-shrink: 0;
+    }
+
+    .timer-ring svg {
+      transform: rotate(-90deg);
+    }
+
+    .timer-ring-bg {
+      fill: none;
+      stroke: var(--surface2);
+      stroke-width: 6;
+    }
+
+    .timer-ring-progress {
+      fill: none;
+      stroke: var(--accent2);
+      stroke-width: 6;
+      stroke-linecap: round;
+      stroke-dasharray: 188.5;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 0.9s linear, stroke 0.3s;
+    }
+
+    .timer-number {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-weight: 800;
+    }
+
+    .timer-info { flex: 1; }
+    .timer-info .big { font-size: 1.5rem; font-weight: 700; }
+    .timer-info .small { color: var(--muted); font-size: 0.85rem; }
+
+    /* ===== ANSWER STATS ===== */
+    .stats-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .stat-bar-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .stat-bar-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .stat-bar-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .option-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .stat-bar-track {
+      background: var(--surface2);
+      border-radius: 99px;
+      height: 10px;
+      overflow: hidden;
+    }
+
+    .stat-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.5s ease;
+    }
+
+    .stat-bar-meta {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    /* ===== ANSWER STATS SUMMARY ===== */
+    .stats-summary {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .stat-chip {
+      background: var(--surface2);
+      border-radius: 8px;
+      padding: 8px 14px;
+      text-align: center;
+      flex: 1;
+      min-width: 80px;
+    }
+
+    .stat-chip .value {
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    .stat-chip .label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ===== QUESTION FORM ===== */
+    .option-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .option-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .option-letter {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--surface2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    .correct-radio {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--success);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* ===== IMAGE UPLOAD ===== */
+    .upload-area {
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .upload-area:hover { border-color: var(--accent); background: rgba(124,92,252,0.05); }
+    .upload-area input { 
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .upload-area .upload-icon { font-size: 1.8rem; margin-bottom: 6px; }
+    .upload-area p { font-size: 0.85rem; color: var(--muted); }
+
+    .image-preview {
+      margin-top: 10px;
+      display: none;
+    }
+    .image-preview img {
+      max-height: 120px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .image-preview.visible { display: block; }
+
+    /* ===== QUESTION LIST ===== */
+    .question-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .question-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      transition: border-color 0.2s;
+    }
+    .question-item:hover { border-color: var(--accent); }
+
+    .q-number {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    .q-content { flex: 1; min-width: 0; }
+
+    .q-text {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .q-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .q-option {
+      font-size: 0.75rem;
+      background: var(--surface);
+      border-radius: 4px;
+      padding: 2px 8px;
+      border: 1px solid var(--border);
+    }
+    .q-option.correct {
+      background: rgba(34,197,94,0.15);
+      border-color: var(--success);
+      color: var(--success);
+    }
+
+    /* ===== RIGHT PANEL ===== */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ===== LEADERBOARD ===== */
+    .leaderboard-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .lb-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      background: var(--surface2);
+      border-radius: 8px;
+      transition: transform 0.2s;
+    }
+    .lb-item:hover { transform: translateX(2px); }
+
+    .lb-rank {
+      font-size: 0.8rem;
+      font-weight: 700;
+      width: 24px;
+      text-align: center;
+      color: var(--muted);
+    }
+    .lb-rank.gold   { color: #ffd700; }
+    .lb-rank.silver { color: #c0c0c0; }
+    .lb-rank.bronze { color: #cd7f32; }
+
+    .lb-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    .lb-name { flex: 1; font-size: 0.9rem; font-weight: 600; }
+
+    .lb-score {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--accent2);
+    }
+
+    /* ===== PARTICIPANTS ===== */
+    .participant-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .participant-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 5px 12px;
+      font-size: 0.82rem;
+    }
+
+    .p-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+    }
+
+    /* ===== TOAST ===== */
+    .toast-container {
+      position: fixed;
+      top: 80px;
+      right: 24px;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: 0.875rem;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideIn 0.3s ease;
+      max-width: 300px;
+    }
+    .toast.success { border-color: var(--success); }
+    .toast.error   { border-color: var(--danger); }
+    .toast.info    { border-color: var(--accent); }
+
+    @keyframes slideIn {
+      from { transform: translateX(120%); opacity: 0; }
+      to   { transform: translateX(0);    opacity: 1; }
+    }
+
+    /* ===== MODAL ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      width: 100%;
+      max-width: 540px;
+      box-shadow: var(--shadow);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .modal-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1.4rem;
+      cursor: pointer;
+      transition: color 0.2s;
+      line-height: 1;
+    }
+    .modal-close:hover { color: var(--text); }
+
+    /* ===== EMPTY STATES ===== */
+    .empty-state {
+      text-align: center;
+      padding: 32px 16px;
+      color: var(--muted);
+    }
+    .empty-state .icon { font-size: 2.5rem; margin-bottom: 8px; }
+    .empty-state p { font-size: 0.9rem; }
+
+    /* ===== WAITING STATE ===== */
+    .waiting-banner {
+      background: linear-gradient(135deg, rgba(124,92,252,0.15), rgba(94,234,212,0.1));
+      border: 1px solid rgba(124,92,252,0.3);
+      border-radius: var(--radius);
+      padding: 24px;
+      text-align: center;
+    }
+    .waiting-banner h2 { font-size: 1.2rem; margin-bottom: 8px; }
+    .waiting-banner p  { color: var(--muted); font-size: 0.9rem; }
+
+    .qr-placeholder {
+      margin: 16px auto;
+      width: 120px;
+      height: 120px;
+      background: var(--surface2);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    /* ===== OPTION COLORS ===== */
+    .color-0 { background: #7c5cfc; }
+    .color-1 { background: #5eead4; }
+    .color-2 { background: #f59e0b; }
+    .color-3 { background: #f43f5e; }
+
+    .bar-0 { background: linear-gradient(90deg, #7c5cfc, #9b74ff); }
+    .bar-1 { background: linear-gradient(90deg, #0d9488, #5eead4); }
+    .bar-2 { background: linear-gradient(90deg, #d97706, #fbbf24); }
+    .bar-3 { background: linear-gradient(90deg, #e11d48, #fb7185); }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 900px) {
+      .main-content {
+        grid-template-columns: 1fr;
+        padding: 16px;
+      }
+      .right-panel { 
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .header { padding: 0 16px; }
+      .room-badge { display: none; }
+      .right-panel { grid-template-columns: 1fr; }
+      .login-card { padding: 32px 24px; }
+      .control-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-<h1>🧑‍💼 PollWave Admin</h1>
 
-<div id="loginSection">
-  <div class="card">
-    <h2>Raum erstellen / betreten</h2>
-    <label>Room-Code (leer lassen für neuen Raum)</label>
-    <input type="text" id="roomCodeInput" placeholder="z.B. AB12CD" maxlength="6" style="text-transform:uppercase;">
-    <button class="primary" onclick="adminLogin()">🚪 Raum öffnen</button>
-    <div id="adminRoomCode" class="room-code-display"></div>
-  </div>
-</div>
+<!-- ===== TOAST CONTAINER ===== -->
+<div class="toast-container" id="toastContainer"></div>
 
-<div id="dashboard" style="display:none;">
-  <div class="toolbar">
-    <button class="primary" onclick="startGame()" id="startBtn">▶️ Spiel starten</button>
-    <button class="secondary" onclick="nextQuestion()" id="nextBtn">⏭️ Nächste Frage</button>
-    <span style="flex:1;"></span>
-    <button class="danger" onclick="resetGame()">🔄 Zurücksetzen</button>
-  </div>
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="loginScreen" class="screen active">
+  <div class="login-card">
+    <div class="logo">🌊 PollWave</div>
+    <p>Admin-Dashboard – erstelle oder öffne einen Raum</p>
 
-  <div class="grid">
-    <div>
-      <div class="card">
-        <h2>Fragen verwalten</h2>
-        <div id="questionsList"></div>
-      </div>
-      <div class="card" style="margin-top:20px;">
-        <h2>Neue Frage</h2>
-        <label>Frage</label>
-        <textarea id="questionText" placeholder="Deine Frage..."></textarea>
-        <div id="optionsContainer">
-          <div class="options-row"><input class="opt" placeholder="Option A"><input class="opt" placeholder="Option B"></div>
-          <div class="options-row"><input class="opt" placeholder="Option C"><input class="opt" placeholder="Option D"></div>
-        </div>
-        <label>Richtige Antwort (0-3)</label>
-        <input type="number" id="correctIndex" min="0" max="3" value="0">
-        <label>Bild-URL (optional)</label>
-        <input type="text" id="imageUrl" placeholder="https://...">
-        <button class="primary" onclick="addQuestion()">➕ Frage hinzufügen</button>
-      </div>
-    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary btn-lg" id="createRoomBtn">
+        ✨ Neuen Raum erstellen
+      </button>
 
-    <div>
-      <div class="card">
-        <h2>Live-Vorschau</h2>
-        <div id="livePreview">
-          <p style="opacity:0.5;">Warte auf Spielstart...</p>
-        </div>
+      <div style="display:flex;align-items:center;gap:10px;margin:4px 0">
+        <hr style="flex:1;border-color:var(--border)">
+        <span style="color:var(--muted);font-size:0.85rem">oder</span>
+        <hr style="flex:1;border-color:var(--border)">
       </div>
-      <div class="card" style="margin-top:20px;">
-        <h2>Spieler</h2>
-        <div id="participantsCount">👥 0 Teilnehmer</div>
-        <div id="participantsList"></div>
+
+      <div class="input-group" style="margin-bottom:0">
+        <label>Raum-Code eingeben</label>
+        <input type="text" id="joinCodeInput" placeholder="z.B. X3PL2U" 
+               maxlength="6" style="text-transform:uppercase;letter-spacing:0.15em;text-align:center;font-size:1.1rem">
       </div>
+      <button class="btn btn-secondary" id="joinRoomBtn">
+        🔑 Raum öffnen
+      </button>
     </div>
   </div>
 </div>
+
+<!-- ===== DASHBOARD SCREEN ===== -->
+<div id="dashScreen" class="screen">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <div class="header-logo">🌊 PollWave</div>
+      <div class="room-badge">
+        Code: <span class="room-code-display" id="headerRoomCode">------</span>
+        <button class="copy-btn" onclick="copyRoomCode()" title="Kopieren">📋</button>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="participant-count">
+        <span class="status-dot"></span>
+        <span id="headerParticipantCount">0</span> Teilnehmer
+      </div>
+      <button class="btn btn-secondary btn-sm" id="addQuestionBtn">
+        ➕ Frage
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <div class="main-content">
+
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+
+      <!-- WAITING BANNER -->
+      <div class="waiting-banner" id="waitingBanner">
+        <h2>⏳ Warte auf Spieler…</h2>
+        <div class="qr-placeholder" id="qrPlaceholder">QR</div>
+        <p>Teile den Code <strong id="waitingCode">------</strong> mit deinen Teilnehmern</p>
+        <p style="margin-top:8px;font-size:0.8rem">
+          🔗 <span id="joinUrl" style="color:var(--accent2)"></span>
+        </p>
+      </div>
+
+      <!-- LIVE STATUS (during game) -->
+      <div class="live-status" id="liveStatus">
+
+        <!-- Current Question Display -->
+        <div class="card" style="padding:16px">
+          <div class="question-label">
+            Frage <span id="currentQNum">1</span> / <span id="totalQNum">1</span>
+          </div>
+          <div class="question-text" id="currentQText">–</div>
+        </div>
+
+        <!-- Timer -->
+        <div class="card" style="padding:16px">
+          <div class="timer-ring-wrap">
+            <div class="timer-ring">
+              <svg width="72" height="72" viewBox="0 0 72 72">
+                <circle class="timer-ring-bg" cx="36" cy="36" r="30"/>
+                <circle class="timer-ring-progress" id="timerRingProgress" cx="36" cy="36" r="30"/>
+              </svg>
+              <div class="timer-number" id="timerNumber">20</div>
+            </div>
+            <div class="timer-info">
+              <div class="big" id="timerBig">20</div>
+              <div class="small">Sekunden verbleibend</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Answer Stats -->
+        <div class="card">
+          <div class="card-header" style="margin-bottom:12px">
+            <div class="card-title">📊 Live-Antworten</div>
+            <div class="stats-summary">
+              <div class="stat-chip">
+                <div class="value" id="statAnswered">0</div>
+                <div class="label">Geantwortet</div>
+              </div>
+              <div class="stat-chip">
+                <div class="value" id="statPending">0</div>
+                <div class="label">Ausstehend</div>
+              </div>
+              <div class="stat-chip">
+                <div class="value" id="statCorrect">0</div>
+                <div class="label">Richtig</div>
+              </div>
+            </div>
+          </div>
+          <div class="stats-grid" id="statsGrid"></div>
+        </div>
+
+      </div>
+
+      <!-- CONTROLS -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🎮 Steuerung</div>
+          <div id="gameStateBadge" style="font-size:0.8rem;padding:4px 10px;border-radius:99px;background:var(--surface2);color:var(--muted)">
+            Wartet
+          </div>
+        </div>
+        <div class="control-grid">
+          <button class="btn btn-success" id="startGameBtn">▶️ Starten</button>
+          <button class="btn btn-secondary" id="nextQuestionBtn" disabled>⏭ Weiter</button>
+          <button class="btn btn-warning"  id="resetGameBtn"   disabled>🔄 Reset</button>
+          <button class="btn btn-danger"   id="endGameBtn"     disabled>⏹ Beenden</button>
+        </div>
+      </div>
+
+      <!-- QUESTION LIST -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📋 Fragen (<span id="questionCount">0</span>)</div>
+          <button class="btn btn-secondary btn-sm" id="addQuestionBtn2">➕ Hinzufügen</button>
+        </div>
+        <div id="questionList">
+          <div class="empty-state">
+            <div class="icon">📭</div>
+            <p>Noch keine Fragen. Füge deine erste Frage hinzu!</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+
+      <!-- LEADERBOARD -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🏆 Rangliste</div>
+        </div>
+        <div id="leaderboardList">
+          <div class="empty-state">
+            <div class="icon">🎖️</div>
+            <p>Noch keine Punkte</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- PARTICIPANTS -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">👥 Teilnehmer (<span id="participantCountCard">0</span>)</div>
+        </div>
+        <div class="participant-grid" id="participantGrid">
+          <div class="empty-state" style="width:100%">
+            <div class="icon">🙋</div>
+            <p>Warte auf Beitritt…</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADD QUESTION MODAL ===== -->
+<div class="modal-overlay" id="addQuestionModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">➕ Neue Frage hinzufügen</div>
+      <button class="modal-close" id="closeModalBtn">✕</button>
+    </div>
+
+    <div class="input-group">
+      <label>Frage *</label>
+      <textarea id="questionInput" placeholder="Wie lautet deine Frage?"></textarea>
+    </div>
+
+    <div class="option-inputs" id="optionInputs"></div>
+
+    <div class="input-group">
+      <label>Richtige Antwort</label>
+      <select id="correctSelect">
+        <option value="0">A</option>
+        <option value="1">B</option>
+        <option value="2">C</option>
+        <option value="3">D</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label>Bild (optional)</label>
+      <div class="upload-area" id="uploadArea">
+        <input type="file" id="imageInput" accept="image/*">
+        <div class="upload-icon">🖼️</div>
+        <p>Klicke oder ziehe ein Bild hierher<br><small>JPEG, PNG, GIF, WEBP – max. 5MB</small></p>
+      </div>
+      <div class="image-preview" id="imagePreview">
+        <img id="previewImg" src="" alt="Vorschau">
+        <button class="btn btn-secondary btn-sm" id="removeImageBtn" style="margin-top:8px">
+          🗑️ Bild entfernen
+        </button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px">
+      <button class="btn btn-secondary" id="cancelModalBtn">Abbrechen</button>
+      <button class="btn btn-primary"   id="saveQuestionBtn">💾 Speichern</button>
+    </div>
+  </div>
 </div>
 
 <script>
+// ===================================================
+//  PollWave Admin – Frontend Logic
+// ===================================================
+
 const socket = io();
-let roomCode = '';
-let questions = [];
 
-function adminLogin() {
-  const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+// ===== STATE =====
+let roomCode    = null;
+let questions   = [];
+let participants = [];
+let gameState   = 'waiting';
+let uploadedImageUrl = null;
+let currentMaxTime   = 20;
+
+// ===== DOM REFS =====
+const loginScreen  = document.getElementById('loginScreen');
+const dashScreen   = document.getElementById('dashScreen');
+const toastContainer = document.getElementById('toastContainer');
+
+// ===== TOAST =====
+function toast(msg, type = 'info', duration = 3000) {
+  const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+  toastContainer.appendChild(el);
+  setTimeout(() => el.remove(), duration);
+}
+
+// ===== SHOW SCREEN =====
+function showDash() {
+  loginScreen.classList.remove('active');
+  dashScreen.classList.add('active');
+}
+function showLogin() {
+  dashScreen.classList.remove('active');
+  loginScreen.classList.add('active');
+}
+
+// ===== ROOM CODE COPY =====
+function copyRoomCode() {
+  if (!roomCode) return;
+  navigator.clipboard.writeText(roomCode).then(() => toast('Code kopiert!', 'success'));
+}
+
+// ===== LOGIN =====
+document.getElementById('createRoomBtn').addEventListener('click', () => {
+  socket.emit('adminLogin', {}, (res) => {
+    if (res.success) initDash(res);
+    else toast(res.error || 'Fehler', 'error');
+  });
+});
+
+document.getElementById('joinRoomBtn').addEventListener('click', () => {
+  const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
+  if (!code || code.length !== 6) { toast('Bitte einen 6-stelligen Code eingeben', 'warning'); return; }
   socket.emit('adminLogin', { code }, (res) => {
+    if (res.success) initDash(res);
+    else toast(res.error || 'Ungültiger Code', 'error');
+  });
+});
+
+document.getElementById('joinCodeInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('joinRoomBtn').click();
+});
+
+// ===== INIT DASHBOARD =====
+function initDash(res) {
+  roomCode  = res.code;
+  questions = res.questions || [];
+  gameState = res.state    || 'waiting';
+
+  const joinUrl = `${location.origin}/?code=${roomCode}`;
+
+  document.getElementById('headerRoomCode').textContent  = roomCode;
+  document.getElementById('waitingCode').textContent     = roomCode;
+  document.getElementById('joinUrl').textContent         = joinUrl;
+
+  // QR Code
+  const qrEl = document.getElementById('qrPlaceholder');
+  qrEl.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(joinUrl)}" alt="QR">`;
+  qrEl.style.background = 'transparent';
+
+  if (res.participants) {
+    document.getElementById('headerParticipantCount').textContent = res.participants;
+    document.getElementById('participantCountCard').textContent   = res.participants;
+  }
+
+  renderQuestions();
+  updateGameState(gameState);
+  buildOptionInputs();
+  showDash();
+  toast(`Raum ${roomCode} geöffnet`, 'success');
+}
+
+// ===== GAME STATE =====
+function updateGameState(state) {
+  gameState = state;
+
+  const badge     = document.getElementById('gameStateBadge');
+  const startBtn  = document.getElementById('startGameBtn');
+  const nextBtn   = document.getElementById('nextQuestionBtn');
+  const resetBtn  = document.getElementById('resetGameBtn');
+  const endBtn    = document.getElementById('endGameBtn');
+  const waiting   = document.getElementById('waitingBanner');
+  const live      = document.getElementById('liveStatus');
+
+  badge.textContent = state === 'waiting' ? 'Wartet' : state === 'playing' ? '🔴 Live' : '✅ Beendet';
+  badge.style.background = state === 'playing' ? 'rgba(244,63,94,0.2)' : state === 'finished' ? 'rgba(34,197,94,0.2)' : 'var(--surface2)';
+  badge.style.color      = state === 'playing' ? 'var(--danger)' : state === 'finished' ? 'var(--success)' : 'var(--muted)';
+
+  startBtn.disabled  = state !== 'waiting';
+  nextBtn.disabled   = state !== 'playing';
+  resetBtn.disabled  = state === 'waiting';
+  endBtn.disabled    = state !== 'playing';
+
+  waiting.style.display = state === 'waiting'  ? 'block' : 'none';
+  live.classList.toggle('visible', state === 'playing');
+}
+
+// ===== CONTROLS =====
+document.getElementById('startGameBtn').addEventListener('click', () => {
+  if (questions.length === 0) { toast('Mindestens eine Frage erforderlich!', 'warning'); return; }
+  socket.emit('startGame', (res) => {
+    if (res.success) { updateGameState('playing'); toast('Spiel gestartet!', 'success'); }
+    else toast(res.error || 'Fehler', 'error');
+  });
+});
+
+document.getElementById('nextQuestionBtn').addEventListener('click', () => {
+  socket.emit('nextQuestion', (res) => {
+    if (!res.success) toast(res.error || 'Fehler', 'error');
+    else if (res.message) toast(res.message, 'info');
+  });
+});
+
+document.getElementById('resetGameBtn').addEventListener('click', () => {
+  if (!confirm('Spiel wirklich zurücksetzen? Alle Punkte werden gelöscht.')) return;
+  socket.emit('resetGame', (res) => {
     if (res.success) {
-      roomCode = res.code;
-      document.getElementById('adminRoomCode').textContent = roomCode;
-      document.getElementById('loginSection').style.display = 'none';
-      document.getElementById('dashboard').style.display = 'block';
-      questions = res.questions || [];
-      renderQuestions();
-      updateParticipantsDisplay(res.state);
-      if (res.state === 'playing') {
-        document.getElementById('startBtn').disabled = true;
-      }
-    } else {
-      alert(res.error || 'Fehler');
-    }
+      updateGameState('waiting');
+      clearStatsUI();
+      toast('Spiel zurückgesetzt', 'success');
+    } else toast('Fehler beim Zurücksetzen', 'error');
+  });
+});
+
+document.getElementById('endGameBtn').addEventListener('click', () => {
+  if (!confirm('Spiel vorzeitig beenden?')) return;
+  socket.emit('nextQuestion', (res) => {
+    // Force through all remaining questions → endGame on server
+    toast('Spiel beendet', 'info');
+  });
+});
+
+// ===== TIMER UI =====
+function updateTimer(t) {
+  const max = currentMaxTime || 20;
+  const pct = t / max;
+  const circumference = 188.5;
+  const offset = circumference * (1 - pct);
+
+  document.getElementById('timerNumber').textContent  = t;
+  document.getElementById('timerBig').textContent     = t;
+
+  const ring = document.getElementById('timerRingProgress');
+  ring.style.strokeDashoffset = offset;
+  ring.style.stroke = t > 10 ? 'var(--accent2)' : t > 5 ? 'var(--warning)' : 'var(--danger)';
+}
+
+// ===== ANSWER STATS UI =====
+function updateAnswerStats(data) {
+  if (!data) return;
+
+  document.getElementById('statAnswered').textContent = data.totalAnswers;
+  document.getElementById('statPending').textContent  = data.totalPlayers - data.totalAnswers;
+  document.getElementById('statCorrect').textContent  = data.correctCount;
+
+  const grid = document.getElementById('statsGrid');
+  grid.innerHTML = '';
+
+  data.stats.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'stat-bar-item';
+    div.innerHTML = `
+      <div class="stat-bar-header">
+        <div class="stat-bar-label">
+          <div class="option-dot color-${i}"></div>
+          <span>${['A','B','C','D'][i]}: ${s.option}</span>
+          ${s.isCorrect ? ' ✅' : ''}
+        </div>
+        <span>${s.percentage}%</span>
+      </div>
+      <div class="stat-bar-track">
+        <div class="stat-bar-fill bar-${i}" style="width:${s.percentage}%"></div>
+      </div>
+      <div class="stat-bar-meta">${s.count} Antworten</div>
+    `;
+    grid.appendChild(div);
   });
 }
 
-function addQuestion() {
-  const question = document.getElementById('questionText').value.trim();
-  const optInputs = document.querySelectorAll('.opt');
-  const options = [];
-  optInputs.forEach(inp => {
-    const val = inp.value.trim();
-    if (val) options.push(val);
-  });
-  const correct = parseInt(document.getElementById('correctIndex').value);
-  const image = document.getElementById('imageUrl').value.trim() || null;
-  if (!question || options.length < 2) { alert('Bitte Frage und mindestens 2 Optionen angeben!'); return; }
-  socket.emit('addQuestion', { question, options, correct, image }, (res) => {
-    if (res.success) {
-      questions = res.questions;
-      renderQuestions();
-      document.getElementById('questionText').value = '';
-      document.querySelectorAll('.opt').forEach(inp => inp.value = '');
-    }
+function clearStatsUI() {
+  document.getElementById('statsGrid').innerHTML = '';
+  document.getElementById('statAnswered').textContent = '0';
+  document.getElementById('statPending').textContent  = '0';
+  document.getElementById('statCorrect').textContent  = '0';
+  document.getElementById('timerNumber').textContent  = '20';
+  document.getElementById('timerBig').textContent     = '20';
+}
+
+// ===== QUESTION LIST =====
+function renderQuestions() {
+  document.getElementById('questionCount').textContent = questions.length;
+  const container = document.getElementById('questionList');
+
+  if (questions.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">📭</div>
+        <p>Noch keine Fragen. Füge deine erste Frage hinzu!</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = '';
+  questions.forEach((q, i) => {
+    const item = document.createElement('div');
+    item.className = 'question-item';
+    item.innerHTML = `
+      <div class="q-number">${i + 1}</div>
+      <div class="q-content">
+        <div class="q-text">${q.question}</div>
+        <div class="q-options">
+          ${q.options.map((opt, oi) => `
+            <span class="q-option ${oi === q.correct ? 'correct' : ''}">
+              ${['A','B','C','D'][oi]}: ${opt}
+            </span>
+          `).join('')}
+        </div>
+        ${q.image ? '<span style="font-size:0.75rem;color:var(--accent2);margin-top:4px;display:block">🖼️ Mit Bild</span>' : ''}
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="deleteQuestion(${i})">🗑️</button>
+    `;
+    container.appendChild(item);
   });
 }
 
+// ===== DELETE QUESTION =====
 function deleteQuestion(index) {
+  if (!confirm('Frage löschen?')) return;
   socket.emit('deleteQuestion', index, (res) => {
     if (res.success) {
       questions = res.questions;
       renderQuestions();
-    }
+      toast('Frage gelöscht', 'success');
+    } else toast('Fehler beim Löschen', 'error');
   });
 }
 
-function renderQuestions() {
-  const container = document.getElementById('questionsList');
-  if (questions.length === 0) {
-    container.innerHTML = '<p style="opacity:0.5;">Noch keine Fragen vorhanden.</p>';
+// ===== LEADERBOARD =====
+function renderLeaderboard(data) {
+  const container = document.getElementById('leaderboardList');
+  if (!data || data.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">🎖️</div>
+        <p>Noch keine Punkte</p>
+      </div>`;
     return;
   }
-  container.innerHTML = questions.map((q, i) => `
-    <div class="question-item">
-      <span><strong>${i+1}.</strong> ${q.question.substring(0,50)}${q.question.length > 50 ? '...' : ''}</span>
-      <button class="danger" onclick="deleteQuestion(${i})" style="padding:8px 12px;">🗑️</button>
-    </div>
-  `).join('');
-}
 
-function startGame() {
-  socket.emit('startGame', (res) => {
-    if (res.success) {
-      document.getElementById('startBtn').disabled = true;
-    } else {
-      alert(res.error || 'Fehler');
-    }
+  const rankClass = ['gold','silver','bronze'];
+  const rankIcon  = ['🥇','🥈','🥉'];
+
+  container.innerHTML = '';
+  data.forEach((p, i) => {
+    const el = document.createElement('div');
+    el.className = 'lb-item';
+    el.innerHTML = `
+      <div class="lb-rank ${rankClass[i] || ''}">${rankIcon[i] || i + 1}</div>
+      <div class="lb-avatar">${p.name[0].toUpperCase()}</div>
+      <div class="lb-name">${p.name}</div>
+      <div class="lb-score">${p.score} Pkt</div>
+    `;
+    container.appendChild(el);
   });
 }
 
-function nextQuestion() {
-  socket.emit('nextQuestion', (res) => {
-    if (!res.success) alert(res.error || 'Fehler');
-  });
-}
-
-function resetGame() {
-  if (confirm('Wirklich zurücksetzen?')) {
-    socket.emit('adminLogout');
-    location.reload();
+// ===== PARTICIPANTS =====
+function renderParticipants(names) {
+  const grid = document.getElementById('participantGrid');
+  if (!names || names.length === 0) {
+    grid.innerHTML = `
+      <div class="empty-state" style="width:100%">
+        <div class="icon">🙋</div>
+        <p>Warte auf Beitritt…</p>
+      </div>`;
+    return;
   }
+  grid.innerHTML = '';
+  names.forEach(name => {
+    const chip = document.createElement('div');
+    chip.className = 'participant-chip';
+    chip.innerHTML = `<div class="p-dot"></div>${name}`;
+    grid.appendChild(chip);
+  });
 }
 
-// Socket-Events für Admin
+// ===== MODAL =====
+function openModal() {
+  resetForm();
+  document.getElementById('addQuestionModal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('addQuestionModal').classList.remove('open');
+}
+
+document.getElementById('addQuestionBtn').addEventListener('click', openModal);
+document.getElementById('addQuestionBtn2').addEventListener('click', openModal);
+document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+document.getElementById('cancelModalBtn').addEventListener('click', closeModal);
+
+document.getElementById('addQuestionModal').addEventListener('click', (e) => {
+  if (e.target.id === 'addQuestionModal') closeModal();
+});
+
+// ===== BUILD OPTION INPUTS =====
+function buildOptionInputs() {
+  const container = document.getElementById('optionInputs');
+  container.innerHTML = '';
+  ['A','B','C','D'].forEach((letter, i) => {
+    const row = document.createElement('div');
+    row.className = 'option-row';
+    row.innerHTML = `
+      <div class="option-letter color-${i}" style="color:#fff">${letter}</div>
+      <input type="text" id="option${i}" placeholder="Antwort ${letter}${i < 2 ? ' *' : ''}" 
+             style="flex:1">
+      <input type="radio" name="correctOption" class="correct-radio" 
+             value="${i}" id="radio${i}" ${i === 0 ? 'checked' : ''}>
+    `;
+    container.appendChild(row);
+  });
+}
+
+// ===== RESET FORM =====
+function resetForm() {
+  document.getElementById('questionInput').value = '';
+  buildOptionInputs();
+  document.getElementById('correctSelect').value = '0';
+  uploadedImageUrl = null;
+  document.getElementById('imagePreview').classList.remove('visible');
+  document.getElementById('previewImg').src = '';
+}
+
+// ===== IMAGE UPLOAD =====
+document.getElementById('imageInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append('image', file);
+
+  try {
+    const res = await fetch('/upload', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.success) {
+      uploadedImageUrl = data.url;
+      document.getElementById('previewImg').src = data.url;
+      document.getElementById('imagePreview').classList.add('visible');
+      toast('Bild hochgeladen', 'success');
+    } else {
+      toast(data.error || 'Upload fehlgeschlagen', 'error');
+    }
+  } catch {
+    toast('Upload-Fehler', 'error');
+  }
+});
+
+document.getElementById('removeImageBtn').addEventListener('click', () => {
+  uploadedImageUrl = null;
+  document.getElementById('imagePreview').classList.remove('visible');
+  document.getElementById('previewImg').src = '';
+  document.getElementById('imageInput').value = '';
+});
+
+// ===== SAVE QUESTION =====
+document.getElementById('saveQuestionBtn').addEventListener('click', () => {
+  const question = document.getElementById('questionInput').value.trim();
+  if (!question) { toast('Bitte eine Frage eingeben', 'warning'); return; }
+
+  const options = [];
+  for (let i = 0; i < 4; i++) {
+    const val = document.getElementById(`option${i}`)?.value.trim();
+    if (i < 2 && !val) { toast(`Antwort ${['A','B','C','D'][i]} ist erforderlich`, 'warning'); return; }
+    if (val) options.push(val);
+  }
+
+  if (options.length < 2) { toast('Mindestens 2 Antworten erforderlich', 'warning'); return; }
+
+  const correctRadio = document.querySelector('input[name="correctOption"]:checked');
+  const correctIndex = correctRadio ? parseInt(correctRadio.value) : 0;
+  const correct = Math.min(correctIndex, options.length - 1);
+
+  socket.emit('addQuestion', {
+    question,
+    options,
+    correct,
+    image: uploadedImageUrl
+  }, (res) => {
+    if (res.success) {
+      questions = res.questions;
+      renderQuestions();
+      closeModal();
+      toast('Frage gespeichert!', 'success');
+    } else toast(res.error || 'Fehler', 'error');
+  });
+});
+
+// ===================================================
+//  SOCKET EVENTS
+// ===================================================
+
+socket.on('participantJoined', (data) => {
+  const count = data.count;
+  document.getElementById('headerParticipantCount').textContent = count;
+  document.getElementById('participantCountCard').textContent   = count;
+
+  if (data.name) {
+    toast(`👋 ${data.name} ist beigetreten`, 'info', 2000);
+    participants.push(data.name);
+    renderParticipants(participants);
+  }
+});
+
 socket.on('questionsUpdated', (qs) => {
   questions = qs;
   renderQuestions();
 });
 
 socket.on('questionStarted', (data) => {
-  document.getElementById('startBtn').disabled = true;
-  document.getElementById('nextBtn').disabled = false;
-  const preview = document.getElementById('livePreview');
-  preview.innerHTML = `
-    <h3>Frage ${data.index + 1}/${data.total}</h3>
-    <p><strong>${data.question}</strong></p>
-    ${data.image ? `<img src="${data.image}" alt="">` : ''}
-    <div class="options">
-      ${data.options.map((o,i) => `<div class="option">${String.fromCharCode(65+i)}: ${o}</div>`).join('')}
-    </div>
-    <p>⏱️ ${data.time}s</p>
-  `;
+  currentMaxTime = data.time || 20;
+  updateGameState('playing');
+
+  document.getElementById('currentQNum').textContent  = data.index + 1;
+  document.getElementById('totalQNum').textContent    = data.total;
+  document.getElementById('currentQText').textContent = data.question;
+
+  updateTimer(currentMaxTime);
+  clearStatsUI();
+  updateTimer(currentMaxTime);
 });
 
 socket.on('timerUpdate', (data) => {
-  const preview = document.getElementById('livePreview');
-  const timerEl = preview.querySelector('p:last-child');
-  if (timerEl) timerEl.textContent = '⏱️ ' + data.time + 's';
+  updateTimer(data.time);
+});
+
+socket.on('answerStats', (data) => {
+  updateAnswerStats(data);
 });
 
 socket.on('questionEnded', (data) => {
-  const preview = document.getElementById('livePreview');
-  preview.innerHTML = `<p>Frage beendet – richtige Antwort: ${String.fromCharCode(65+data.correct)}</p>`;
-  document.getElementById('nextBtn').disabled = false;
-});
-
-socket.on('participantJoined', (data) => {
-  document.getElementById('participantsCount').textContent = `👥 ${data.count} Teilnehmer`;
+  // Stats werden bereits via answerStats aktualisiert
+  toast(`✅ Richtige Antwort: ${['A','B','C','D'][data.correct]}`, 'success', 4000);
 });
 
 socket.on('leaderboardUpdate', (data) => {
-  // optional – für Admin nicht nötig, aber können wir später nutzen
+  renderLeaderboard(data);
 });
 
 socket.on('gameFinished', (data) => {
-  alert('Spiel beendet!');
-  document.getElementById('startBtn').disabled = false;
-  document.getElementById('nextBtn').disabled = true;
-  document.getElementById('livePreview').innerHTML = '<p>Spiel beendet – Sieger: ' + (data[0]?.name || '?') + '</p>';
+  updateGameState('finished');
+  renderLeaderboard(data);
+  toast('🎉 Spiel beendet! Sieger: ' + (data[0]?.name || '–'), 'success', 5000);
 });
 
-function updateParticipantsDisplay(state) {
-  // Einfache Dummy-Anzeige – wird durch Events aktualisiert
-}
+socket.on('gameReset', () => {
+  participants = [];
+  updateGameState('waiting');
+  clearStatsUI();
+  renderLeaderboard([]);
+  renderParticipants([]);
+  toast('Spiel wurde zurückgesetzt', 'info');
+});
+
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal();
+});
+
+// ===== INIT =====
+buildOptionInputs();
 </script>
 </body>
 </html>
