@@ -29,15 +29,15 @@
       flex-shrink: 0;
       height: 56px;
     }
-    .pres-header img   { height: 30px; }
-    .pres-header h1    {
+    .pres-header img { height: 30px; }
+    .pres-header h1 {
       font-size: 18px;
       font-weight: 800;
       background: linear-gradient(135deg, #FF6600, #4ECDC4);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    .pres-room-code    {
+    .pres-room-code {
       margin-left: auto;
       font-size: 22px;
       font-weight: 900;
@@ -122,7 +122,7 @@
       overflow: hidden;
     }
 
-    /* Content area (question + answers) */
+    /* Content area */
     .q-content {
       flex: 1;
       display: flex;
@@ -145,11 +145,7 @@
     .q-image-panel.pos-right.size-large  { width: 45%; }
     .q-image-panel.pos-left.size-full,
     .q-image-panel.pos-right.size-full   { width: 55%; }
-
-    .q-image-panel img {
-      width: 100%;
-      height: 100%;
-    }
+    .q-image-panel img { width: 100%; height: 100%; }
     .q-image-panel.fit-cover   img { object-fit: cover; }
     .q-image-panel.fit-contain img { object-fit: contain; }
     .q-image-panel.fit-fill    img { object-fit: fill; }
@@ -186,8 +182,8 @@
 
     /* Question text */
     .q-text-area { position: relative; z-index: 1; }
-    .q-index     { font-size: 14px; color: #aaa; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
-    .q-text      {
+    .q-index { font-size: 14px; color: #aaa; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+    .q-text {
       font-size: clamp(22px, 3.5vw, 42px);
       font-weight: 800;
       line-height: 1.25;
@@ -237,7 +233,7 @@
       font-size: 16px; font-weight: 900; flex-shrink: 0;
     }
     .q-option-text  { flex: 1; }
-    .q-option-bar   {
+    .q-option-bar {
       position: absolute;
       bottom: 0; left: 0;
       height: 5px;
@@ -255,11 +251,11 @@
     .opt-2 { background: linear-gradient(135deg, #7d6608, #f1c40f); color: #1a1a2e; }
     .opt-3 { background: linear-gradient(135deg, #1e8449, #2ecc71); }
 
-    /* Correct answer highlight */
+    /* Correct/Incorrect highlight */
     .q-option.correct   { outline: 4px solid #fff; transform: scale(1.03); box-shadow: 0 0 30px rgba(255,255,255,0.3); }
     .q-option.incorrect { opacity: 0.35; }
 
-    /* ── Results / Leaderboard overlay ── */
+    /* ── Leaderboard Overlay ── */
     .overlay {
       position: absolute;
       inset: 0;
@@ -294,12 +290,29 @@
       border-radius: 14px;
       margin-bottom: 10px;
       font-size: 18px;
+      animation: slideIn 0.4s ease forwards;
+      opacity: 0;
+    }
+    .mini-lb-item:nth-child(1) { animation-delay: 0.1s; }
+    .mini-lb-item:nth-child(2) { animation-delay: 0.2s; }
+    .mini-lb-item:nth-child(3) { animation-delay: 0.3s; }
+    .mini-lb-item:nth-child(4) { animation-delay: 0.4s; }
+    .mini-lb-item:nth-child(5) { animation-delay: 0.5s; }
+    @keyframes slideIn {
+      from { transform: translateX(-30px); opacity: 0; }
+      to   { transform: translateX(0);     opacity: 1; }
     }
     .mini-lb-rank  { font-size: 26px; width: 40px; text-align: center; }
     .mini-lb-name  { flex: 1; font-weight: 700; }
-    .mini-lb-score { color: #FF6600; font-weight: 900; font-size: 22px; }
+    .mini-lb-score {
+      color: #FF6600;
+      font-weight: 900;
+      font-size: 22px;
+      min-width: 100px;
+      text-align: right;
+    }
 
-    /* ── Podium (game finished) ── */
+    /* ── Podium Screen ── */
     #podiumScreen {
       display: none;
       position: absolute;
@@ -310,6 +323,7 @@
       justify-content: center;
       background: linear-gradient(180deg, #0f0f1a 0%, #1a0f2e 100%);
       padding: 32px;
+      overflow-y: auto;
     }
     .podium-title {
       font-size: 52px;
@@ -352,6 +366,7 @@
     .podium-stand.p2 { height: 100px; background: linear-gradient(180deg, #C0C0C0, #909090); }
     .podium-stand.p3 { height:  75px; background: linear-gradient(180deg, #CD7F32, #8B5E2F); }
 
+    /* Full leaderboard */
     .full-lb { width: 100%; max-width: 600px; }
     .full-lb-item {
       display: flex; align-items: center; gap: 12px;
@@ -363,23 +378,41 @@
     .full-lb-name  { flex: 1; font-weight: 600; }
     .full-lb-score { color: #FF6600; font-weight: 800; }
 
-    /* ── Next button ── */
+    /* ── Next Question Button ── */
     .btn-next-q {
-      position: absolute;
+      position: fixed;
       bottom: 24px; right: 24px;
-      z-index: 30;
-      padding: 14px 28px;
+      z-index: 100;
+      padding: 16px 32px;
       background: linear-gradient(135deg, #FF6600, #e55a00);
       border: none;
       border-radius: 14px;
       color: #fff;
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 800;
       cursor: pointer;
-      box-shadow: 0 6px 25px rgba(255,102,0,0.5);
+      box-shadow: 0 6px 25px rgba(255,102,0,0.6);
       transition: all 0.2s;
+      display: none;
     }
-    .btn-next-q:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(255,102,0,0.6); }
+    .btn-next-q:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 35px rgba(255,102,0,0.7);
+    }
+    .btn-next-q:active {
+      transform: translateY(0);
+    }
+
+    /* Pulse animation for button */
+    @keyframes pulse {
+      0%   { box-shadow: 0 6px 25px rgba(255,102,0,0.6); }
+      50%  { box-shadow: 0 6px 40px rgba(255,102,0,0.9); }
+      100% { box-shadow: 0 6px 25px rgba(255,102,0,0.6); }
+    }
+    .btn-next-q.visible {
+      display: block;
+      animation: pulse 1.5s infinite;
+    }
 
     /* ── Confetti ── */
     .confetti-piece {
@@ -388,15 +421,34 @@
       border-radius: 3px;
       top: -20px;
       animation: confettiFall linear forwards;
-      z-index: 50;
+      z-index: 200;
       pointer-events: none;
     }
     @keyframes confettiFall {
       to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
     }
+
+    /* ── Connection status ── */
+    #connStatus {
+      position: fixed;
+      top: 8px; left: 50%;
+      transform: translateX(-50%);
+      background: #e74c3c;
+      color: #fff;
+      padding: 6px 18px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      z-index: 999;
+      display: none;
+    }
+    #connStatus.show { display: block; }
   </style>
 </head>
 <body>
+
+<!-- Connection Status -->
+<div id="connStatus">⚠ Verbindung unterbrochen – wird wiederhergestellt…</div>
 
 <!-- Header -->
 <div class="pres-header">
@@ -409,29 +461,29 @@
 <!-- Main -->
 <div class="pres-main" id="presMain">
 
-  <!-- Waiting -->
+  <!-- Waiting Screen -->
   <div id="waitingScreen">
     <div class="waiting-title" id="waitingTitle">PollWave Quiz</div>
     <div class="waiting-sub">Scanne den QR-Code oder gib den Code ein</div>
     <div class="waiting-code" id="waitingCode">------</div>
-    <div class="waiting-qr" id="waitingQR"></div>
-    <div class="waiting-url" id="waitingUrl"></div>
+    <div class="waiting-qr"   id="waitingQR"></div>
+    <div class="waiting-url"  id="waitingUrl"></div>
     <div class="waiting-players" id="waitingPlayers">0 Spieler bereit</div>
   </div>
 
-  <!-- Question -->
+  <!-- Question Screen -->
   <div id="questionScreen">
     <div class="progress-bar-wrap">
       <div class="progress-bar-fill" id="progressBar" style="width:100%"></div>
     </div>
 
-    <!-- Top image slot -->
+    <!-- Top image -->
     <div class="q-image-top" id="qImageTop">
       <img id="qImageTopImg" src="" alt="" />
     </div>
 
     <div class="q-layout" id="qLayout">
-      <!-- Left image slot -->
+      <!-- Left image -->
       <div class="q-image-panel" id="qImageLeft">
         <img id="qImageLeftImg" src="" alt="" />
       </div>
@@ -443,13 +495,14 @@
 
       <div class="q-content">
         <div class="q-text-area">
-          <div class="q-index"   id="qIndex">Frage 1/1</div>
-          <div class="q-text"    id="qText">Frage…</div>
+          <div class="q-index" id="qIndex">Frage 1/1</div>
+          <div class="q-text"  id="qText">Frage…</div>
         </div>
 
         <div class="q-timer-wrap">
           <svg class="q-timer-svg" width="56" height="56" viewBox="0 0 56 56">
-            <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="5"/>
+            <circle cx="28" cy="28" r="24" fill="none"
+              stroke="rgba(255,255,255,0.1)" stroke-width="5"/>
             <circle id="timerCircle" cx="28" cy="28" r="24" fill="none"
               stroke="#FF6600" stroke-width="5"
               stroke-linecap="round"
@@ -466,62 +519,81 @@
         <div class="q-options" id="qOptions"></div>
       </div>
 
-      <!-- Right image slot -->
+      <!-- Right image -->
       <div class="q-image-panel" id="qImageRight">
         <img id="qImageRightImg" src="" alt="" />
       </div>
     </div>
 
-    <!-- Bottom image slot -->
+    <!-- Bottom image -->
     <div class="q-image-bottom" id="qImageBottom">
       <img id="qImageBottomImg" src="" alt="" />
     </div>
 
-    <!-- Leaderboard overlay (shown after each question) -->
+    <!-- Leaderboard Overlay -->
     <div class="overlay hidden" id="lbOverlay">
       <div class="overlay-title">📊 Zwischenstand</div>
       <div class="mini-lb" id="miniLb"></div>
     </div>
   </div>
 
-  <!-- Podium -->
+  <!-- Podium Screen -->
   <div id="podiumScreen">
     <div class="podium-title">🏆 Endresultat</div>
-    <div class="podium-row"   id="podiumRow"></div>
-    <div class="full-lb"      id="fullLb"></div>
+    <div class="podium-row" id="podiumRow"></div>
+    <div class="full-lb"    id="fullLb"></div>
   </div>
 
-  <!-- Next Question button (visible to presenter) -->
-  <button class="btn-next-q" id="btnNextQ" style="display:none" onclick="presenterNext()">
-    ⏭ Nächste Frage
-  </button>
 </div>
 
+<!-- Next Question Button (fixed, always on top) -->
+<button class="btn-next-q" id="btnNextQ" onclick="presenterNext()">
+  ⏭ Nächste Frage
+</button>
+
 <script>
-  const socket = io();
-  const params  = new URLSearchParams(window.location.search);
-  const ROOM    = (params.get('room') || '').toUpperCase();
+  // ── Setup ──────────────────────────────────────────────────────────────────
+  const socket   = io();
+  const params   = new URLSearchParams(window.location.search);
+  const ROOM     = (params.get('room') || '').toUpperCase();
+  // Password: either from URL ?password=xxx or default
+  const PASSWORD = params.get('password') || 'galaxus2024';
 
-  let maxTime     = 30;
-  let currentTime = 30;
-  let totalQ      = 1;
+  let maxTime      = 30;
+  let currentTime  = 30;
+  let totalQ       = 1;
   let answerCounts = [];
+  let currentOptions = [];
+  let isPresenter  = true;
 
-  // ── Init ────────────────────────────────────────────────────────────────────
+  // ── Init ───────────────────────────────────────────────────────────────────
   if (!ROOM) {
     document.getElementById('waitingTitle').textContent = '⚠ Kein Raum angegeben';
+    document.getElementById('waitingTitle').style.fontSize = '28px';
   } else {
-    document.getElementById('presRoomCode').textContent  = ROOM;
-    document.getElementById('waitingCode').textContent   = ROOM;
+    document.getElementById('presRoomCode').textContent   = ROOM;
+    document.getElementById('waitingCode').textContent    = ROOM;
     const url = `${window.location.origin}?code=${ROOM}`;
-    document.getElementById('waitingUrl').textContent    = url;
+    document.getElementById('waitingUrl').textContent     = url;
     document.getElementById('waitingQR').innerHTML =
       `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}" />`;
 
+    // Join as presenter
     socket.emit('joinRoom', { code: ROOM, name: '__presenter__' });
   }
 
-  // ── Helpers ─────────────────────────────────────────────────────────────────
+  // ── Connection Handling ────────────────────────────────────────────────────
+  socket.on('disconnect', () => {
+    document.getElementById('connStatus').classList.add('show');
+  });
+  socket.on('connect', () => {
+    document.getElementById('connStatus').classList.remove('show');
+    if (ROOM) {
+      socket.emit('joinRoom', { code: ROOM, name: '__presenter__' });
+    }
+  });
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
   function escHtml(str) {
     return String(str || '')
       .replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -529,64 +601,63 @@
   }
 
   function showScreen(id) {
-    ['waitingScreen','questionScreen','podiumScreen'].forEach(s => {
-      const el = document.getElementById(s);
-      if (el) el.style.display = s === id ? (id === 'questionScreen' ? 'flex' : (id === 'podiumScreen' ? 'flex' : 'flex')) : 'none';
-    });
+    document.getElementById('waitingScreen').style.display  = 'none';
+    document.getElementById('questionScreen').style.display = 'none';
+    document.getElementById('podiumScreen').style.display   = 'none';
+
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'flex';
   }
 
   function setProgress(timeLeft, max) {
-    const pct = (timeLeft / max) * 100;
+    const pct  = (timeLeft / max) * 100;
     document.getElementById('progressBar').style.width = pct + '%';
-    // SVG circle
     const circ = document.getElementById('timerCircle');
     const circumference = 150.8;
     circ.style.strokeDashoffset = circumference * (1 - timeLeft / max);
-    circ.style.stroke = timeLeft <= 5 ? '#e74c3c' : timeLeft <= 10 ? '#f1c40f' : '#FF6600';
+    circ.style.stroke = timeLeft <= 5 ? '#e74c3c'
+                      : timeLeft <= 10 ? '#f1c40f'
+                      : '#FF6600';
   }
 
   function resetImagePanels() {
-    ['qImageLeft','qImageRight','qImageTop','qImageBottom','qBgImage'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = 'none';
-    });
-    ['qImageLeft','qImageRight'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) { el.className = 'q-image-panel'; }
-    });
-    const bg = document.getElementById('qBgImage');
-    if (bg) bg.style.display = 'none';
+    document.getElementById('qImageTop').style.display    = 'none';
+    document.getElementById('qImageBottom').style.display = 'none';
+    document.getElementById('qBgImage').style.display     = 'none';
+
+    const left  = document.getElementById('qImageLeft');
+    const right = document.getElementById('qImageRight');
+    left.style.display  = 'none';
+    right.style.display = 'none';
+    left.className  = 'q-image-panel';
+    right.className = 'q-image-panel';
   }
 
   function applyImage(image, position, size, fit) {
     if (!image) return;
-
     const sizeClass = 'size-' + (size || 'medium');
     const fitClass  = 'fit-'  + (fit  || 'cover');
 
     if (position === 'left' || position === 'right') {
-      const panelId = position === 'left' ? 'qImageLeft' : 'qImageRight';
+      const panelId = position === 'left' ? 'qImageLeft'    : 'qImageRight';
       const imgId   = position === 'left' ? 'qImageLeftImg' : 'qImageRightImg';
       const panel   = document.getElementById(panelId);
       const img     = document.getElementById(imgId);
-      panel.className = `q-image-panel pos-${position} ${sizeClass} ${fitClass}`;
+      panel.className     = `q-image-panel pos-${position} ${sizeClass} ${fitClass}`;
       panel.style.display = 'block';
       img.src = image;
-
     } else if (position === 'top') {
       const panel = document.getElementById('qImageTop');
       const img   = document.getElementById('qImageTopImg');
-      panel.className = `q-image-top ${sizeClass} ${fitClass}`;
+      panel.className     = `q-image-top ${sizeClass} ${fitClass}`;
       panel.style.display = 'block';
       img.src = image;
-
     } else if (position === 'bottom') {
       const panel = document.getElementById('qImageBottom');
       const img   = document.getElementById('qImageBottomImg');
-      panel.className = `q-image-bottom ${sizeClass} ${fitClass}`;
+      panel.className     = `q-image-bottom ${sizeClass} ${fitClass}`;
       panel.style.display = 'block';
       img.src = image;
-
     } else if (position === 'background') {
       const panel = document.getElementById('qBgImage');
       const img   = document.getElementById('qBgImageImg');
@@ -596,13 +667,14 @@
   }
 
   function renderOptions(options, counts, correctAnswer) {
-    const letters = ['A','B','C','D'];
-    const max     = Math.max(...(counts || [0]), 1);
+    currentOptions = options;
+    const letters  = ['A','B','C','D'];
+    const max      = Math.max(...(counts || [0]), 1);
     const container = document.getElementById('qOptions');
     container.innerHTML = options.map((opt, i) => {
       const count = (counts && counts[i]) || 0;
-      const pct   = Math.round((count / max) * 100);
-      let cls = `q-option opt-${i}`;
+      const pct   = counts ? Math.round((count / max) * 100) : 0;
+      let cls     = `q-option opt-${i}`;
       if (correctAnswer !== undefined && correctAnswer !== null) {
         cls += i === correctAnswer ? ' correct' : ' incorrect';
       }
@@ -610,33 +682,57 @@
         <div class="${cls}">
           <div class="q-option-letter">${letters[i]}</div>
           <div class="q-option-text">${escHtml(opt)}</div>
-          ${counts ? `<div class="q-option-count">${count}</div>` : ''}
-          <div class="q-option-bar" style="width:${counts ? pct : 0}%"></div>
+          <div class="q-option-count">${counts ? count : ''}</div>
+          <div class="q-option-bar" style="width:${pct}%"></div>
         </div>`;
     }).join('');
   }
 
-  // ── Presenter Next ───────────────────────────────────────────────────────────
-  function presenterNext() {
-    socket.emit('adminNextQuestion', { code: ROOM, password: '' });
-    // Hide overlay immediately
-    document.getElementById('lbOverlay').classList.add('hidden');
-    document.getElementById('btnNextQ').style.display = 'none';
+  function updateCounts(counts) {
+    if (!counts) return;
+    const max      = Math.max(...counts, 1);
+    const countEls = document.querySelectorAll('#qOptions .q-option-count');
+    const barEls   = document.querySelectorAll('#qOptions .q-option-bar');
+    counts.forEach((c, i) => {
+      if (countEls[i]) countEls[i].textContent    = c;
+      if (barEls[i])   barEls[i].style.width = Math.round((c / max) * 100) + '%';
+    });
   }
 
-  // ── Confetti ─────────────────────────────────────────────────────────────────
+  // ── Presenter Next Question ────────────────────────────────────────────────
+  function presenterNext() {
+    console.log('[PRESENTER] Sending adminNextQuestion for room:', ROOM);
+    socket.emit('adminNextQuestion', {
+      code:     ROOM,
+      password: PASSWORD
+    });
+    // Hide overlay and button immediately
+    document.getElementById('lbOverlay').classList.add('hidden');
+    showNextButton(false);
+  }
+
+  function showNextButton(show) {
+    const btn = document.getElementById('btnNextQ');
+    if (show) {
+      btn.classList.add('visible');
+    } else {
+      btn.classList.remove('visible');
+    }
+  }
+
+  // ── Confetti ───────────────────────────────────────────────────────────────
   function launchConfetti() {
     const colors = ['#FF6600','#4ECDC4','#FFD700','#e74c3c','#9b59b6','#2ecc71'];
-    for (let k = 0; k < 120; k++) {
+    for (let k = 0; k < 150; k++) {
       const el = document.createElement('div');
       el.className = 'confetti-piece';
       el.style.cssText = `
         left: ${Math.random() * 100}vw;
         background: ${colors[Math.floor(Math.random() * colors.length)]};
-        animation-duration: ${2 + Math.random() * 2}s;
-        animation-delay: ${Math.random() * 1.5}s;
+        animation-duration: ${2 + Math.random() * 2.5}s;
+        animation-delay: ${Math.random() * 2}s;
         transform: rotate(${Math.random() * 360}deg);
-        width: ${6 + Math.random() * 8}px;
+        width:  ${6 + Math.random() * 8}px;
         height: ${10 + Math.random() * 10}px;
       `;
       document.body.appendChild(el);
@@ -644,17 +740,66 @@
     }
   }
 
-  // ── Socket Events ─────────────────────────────────────────────────────────────
-  socket.on('joinedRoom', ({ quizName, state, players }) => {
-    document.getElementById('waitingTitle').textContent   = quizName || 'PollWave Quiz';
-    document.getElementById('presQuizName').textContent   = quizName || 'PollWave';
-    document.getElementById('waitingPlayers').textContent = `${players} Spieler bereit`;
-    document.getElementById('presPlayerCount').textContent = `${players} Spieler`;
+  // ── Leaderboard Renderer ───────────────────────────────────────────────────
+  function renderMiniLeaderboard(leaderboard) {
+    if (!leaderboard || !leaderboard.length) return;
+    const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+    document.getElementById('miniLb').innerHTML = leaderboard
+      .slice(0, 5)
+      .map((p, i) => `
+        <div class="mini-lb-item">
+          <div class="mini-lb-rank">${medals[i] || (i + 1)}</div>
+          <div class="mini-lb-name">${escHtml(p.name)}</div>
+          <div class="mini-lb-score">${(p.score || 0).toLocaleString()} Pts</div>
+        </div>`)
+      .join('');
+    document.getElementById('lbOverlay').classList.remove('hidden');
+  }
 
-    if (state === 'finished') {
-      // already done – nothing special
-    } else if (state === 'playing') {
+  function renderPodium(leaderboard) {
+    const sorted = leaderboard || [];
+
+    // Podium order: 2nd, 1st, 3rd
+    const podiumData = [
+      { data: sorted[1], cls: 'p2', emoji: '🥈' },
+      { data: sorted[0], cls: 'p1', emoji: '🥇' },
+      { data: sorted[2], cls: 'p3', emoji: '🥉' }
+    ];
+
+    document.getElementById('podiumRow').innerHTML = podiumData.map(({ data, cls, emoji }) => {
+      if (!data) return '<div class="podium-block"></div>';
+      return `
+        <div class="podium-block">
+          <div class="podium-avatar" style="background:rgba(255,255,255,0.1)">${emoji}</div>
+          <div class="podium-name">${escHtml(data.name)}</div>
+          <div class="podium-score">${(data.score || 0).toLocaleString()} Pts</div>
+          <div class="podium-stand ${cls}">${emoji}</div>
+        </div>`;
+    }).join('');
+
+    // 4th place onwards
+    document.getElementById('fullLb').innerHTML = sorted.slice(3).map((p, i) => `
+      <div class="full-lb-item">
+        <div class="full-lb-rank">${i + 4}</div>
+        <div class="full-lb-name">${escHtml(p.name)}</div>
+        <div class="full-lb-score">${(p.score || 0).toLocaleString()} Pts</div>
+      </div>`).join('');
+  }
+
+  // ── Socket Events ──────────────────────────────────────────────────────────
+
+  socket.on('joinedRoom', ({ quizName, state, players, currentQuestion }) => {
+    console.log('[joinedRoom]', { quizName, state, players });
+
+    document.getElementById('waitingTitle').textContent    = quizName || 'PollWave Quiz';
+    document.getElementById('presQuizName').textContent    = quizName || 'PollWave';
+    document.getElementById('waitingPlayers').textContent  = `${players || 0} Spieler bereit`;
+    document.getElementById('presPlayerCount').textContent = `${players || 0} Spieler`;
+
+    if (state === 'playing') {
       showScreen('questionScreen');
+    } else if (state === 'finished') {
+      showScreen('podiumScreen');
     } else {
       showScreen('waitingScreen');
     }
@@ -667,6 +812,7 @@
 
   socket.on('playerLeft', ({ playerCount }) => {
     document.getElementById('presPlayerCount').textContent = `${playerCount} Spieler`;
+    document.getElementById('waitingPlayers').textContent  = `${playerCount} Spieler bereit`;
   });
 
   socket.on('quizNameUpdated', ({ quizName }) => {
@@ -674,23 +820,30 @@
     document.getElementById('presQuizName').textContent = quizName;
   });
 
-  socket.on('gameStarted', ({ quizName }) => {
+  socket.on('gameStarted', ({ quizName, totalQuestions }) => {
+    console.log('[gameStarted]', quizName);
     document.getElementById('presQuizName').textContent = quizName || 'PollWave';
     document.getElementById('lbOverlay').classList.add('hidden');
+    showNextButton(false);
     showScreen('questionScreen');
   });
 
-  socket.on('newQuestion', ({ index, total, question, options, time, image, imagePosition, imageSize, imageFit }) => {
-    maxTime     = time || 30;
-    currentTime = maxTime;
-    totalQ      = total;
-    answerCounts = [];
+  socket.on('newQuestion', ({
+    index, total, question, options, time,
+    image, imagePosition, imageSize, imageFit
+  }) => {
+    console.log('[newQuestion]', index, '/', total, question);
 
+    maxTime      = time || 30;
+    currentTime  = maxTime;
+    totalQ       = total;
+    answerCounts = new Array(options.length).fill(0);
+
+    // Reset UI
     document.getElementById('lbOverlay').classList.add('hidden');
-    document.getElementById('btnNextQ').style.display = 'none';
-
-    document.getElementById('qIndex').textContent = `Frage ${index + 1} / ${total}`;
-    document.getElementById('qText').textContent  = question;
+    showNextButton(false);
+    document.getElementById('qIndex').textContent    = `Frage ${index + 1} / ${total}`;
+    document.getElementById('qText').textContent     = question;
     document.getElementById('timerText').textContent = maxTime;
 
     setProgress(maxTime, maxTime);
@@ -703,103 +856,63 @@
 
   socket.on('timerUpdate', ({ timeLeft, maxTime: max }) => {
     currentTime = timeLeft;
-    maxTime     = max;
+    if (max) maxTime = max;
     document.getElementById('timerText').textContent = timeLeft;
-    setProgress(timeLeft, max);
+    setProgress(timeLeft, maxTime);
   });
 
   socket.on('answerUpdate', ({ answerCounts: counts }) => {
+    if (!counts) return;
     answerCounts = counts;
-    // Update count badges without re-rendering (just update counts)
-    const countEls = document.querySelectorAll('#qOptions .q-option-count');
-    const barEls   = document.querySelectorAll('#qOptions .q-option-bar');
-    const max      = Math.max(...counts, 1);
-    counts.forEach((c, i) => {
-      if (countEls[i]) countEls[i].textContent = c;
-      if (barEls[i])   barEls[i].style.width   = Math.round((c / max) * 100) + '%';
-    });
+    updateCounts(counts);
   });
 
   socket.on('questionEnd', ({ correctAnswer, answerCounts: counts, leaderboard }) => {
-    // Show correct answer
+    console.log('[questionEnd] correctAnswer:', correctAnswer, 'leaderboard:', leaderboard);
+
+    // Highlight correct/incorrect answers
     const opts = document.querySelectorAll('#qOptions .q-option');
     opts.forEach((el, i) => {
-      el.classList.remove('correct','incorrect');
+      el.classList.remove('correct', 'incorrect');
       el.classList.add(i === correctAnswer ? 'correct' : 'incorrect');
     });
 
-    // Update bars with final counts
-    if (counts) {
-      const countEls = document.querySelectorAll('#qOptions .q-option-count');
-      const barEls   = document.querySelectorAll('#qOptions .q-option-bar');
-      const max      = Math.max(...counts, 1);
-      counts.forEach((c, i) => {
-        if (countEls[i]) countEls[i].textContent = c;
-        if (barEls[i])   barEls[i].style.width   = Math.round((c / max) * 100) + '%';
-      });
-    }
+    // Update final counts
+    if (counts) updateCounts(counts);
 
-    // Show mini leaderboard overlay
-    if (leaderboard?.length) {
-      const medals = ['🥇','🥈','🥉'];
-      document.getElementById('miniLb').innerHTML = leaderboard.slice(0, 5).map((p, i) => `
-        <div class="mini-lb-item">
-          <div class="mini-lb-rank">${medals[i] || i + 1}</div>
-          <div class="mini-lb-name">${escHtml(p.name)}</div>
-          <div class="mini-lb-score">${p.score} Pts</div>
-        </div>`).join('');
-      document.getElementById('lbOverlay').classList.remove('hidden');
-    }
+    // Show leaderboard overlay
+    renderMiniLeaderboard(leaderboard);
 
-    // Show next button for presenter
-    document.getElementById('btnNextQ').style.display = 'block';
+    // Show next button
+    showNextButton(true);
   });
 
   socket.on('gameFinished', ({ leaderboard }) => {
+    console.log('[gameFinished] leaderboard:', leaderboard);
+
     launchConfetti();
+    showNextButton(false);
+    document.getElementById('lbOverlay').classList.add('hidden');
+
+    renderPodium(leaderboard);
     showScreen('podiumScreen');
-    document.getElementById('btnNextQ').style.display = 'none';
-
-    const sorted = leaderboard || [];
-
-    // Podium (top 3)
-    const podiumData = [
-      { data: sorted[1], cls: 'p2', emoji: '🥈', rank: 2 },
-      { data: sorted[0], cls: 'p1', emoji: '🥇', rank: 1 },
-      { data: sorted[2], cls: 'p3', emoji: '🥉', rank: 3 }
-    ];
-
-    document.getElementById('podiumRow').innerHTML = podiumData.map(({ data, cls, emoji }) => {
-      if (!data) return '<div class="podium-block"></div>';
-      return `
-        <div class="podium-block">
-          <div class="podium-avatar" style="background:rgba(255,255,255,0.1)">${emoji}</div>
-          <div class="podium-name">${escHtml(data.name)}</div>
-          <div class="podium-score">${data.score} Pts</div>
-          <div class="podium-stand ${cls}">${emoji}</div>
-        </div>`;
-    }).join('');
-
-    // Full list (4th+)
-    document.getElementById('fullLb').innerHTML = sorted.slice(3).map((p, i) => `
-      <div class="full-lb-item">
-        <div class="full-lb-rank">${i + 4}</div>
-        <div class="full-lb-name">${escHtml(p.name)}</div>
-        <div class="full-lb-score">${p.score} Pts</div>
-      </div>`).join('');
-
-    document.getElementById('podiumScreen').style.display = 'flex';
   });
 
   socket.on('gameReset', () => {
-    document.getElementById('podiumScreen').style.display = 'none';
+    console.log('[gameReset]');
     document.getElementById('lbOverlay').classList.add('hidden');
-    document.getElementById('btnNextQ').style.display = 'none';
+    showNextButton(false);
     showScreen('waitingScreen');
   });
 
   socket.on('error', ({ message }) => {
     console.warn('[SOCKET ERROR]', message);
+  });
+
+  // Debug: log all events
+  const origOn = socket.on.bind(socket);
+  socket.onAny((event, ...args) => {
+    console.log('[SOCKET EVENT]', event, args);
   });
 </script>
 </body>

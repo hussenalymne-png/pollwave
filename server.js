@@ -34,7 +34,7 @@ const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const allowed = ['image/jpeg','image/jpg','image/png','image/gif','image/webp'];
+    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     cb(null, allowed.includes(file.mimetype));
   }
 });
@@ -50,9 +50,9 @@ function loadGames() {
   }
   return {};
 }
+
 function saveGames(games) {
   try {
-    // Strip non-serialisable fields (timers) before saving
     const clean = {};
     for (const [code, room] of Object.entries(games)) {
       const { timer, ...rest } = room;
@@ -75,6 +75,23 @@ function calcScore(timeLeft, maxTime) {
   return Math.max(100, Math.floor(200 * (timeLeft / maxTime)));
 }
 
+function getLeaderboard(room) {
+  return Object.entries(room.players)
+    .filter(([name]) => name !== '__presenter__')
+    .map(([name, p]) => ({ name, score: p.score || 0 }))
+    .sort((a, b) => b.score - a.score);
+}
+
+function getAnswerCounts(room, qIndex) {
+  const question = room.questions[qIndex];
+  if (!question) return [];
+  return (question.options || []).map((_, i) =>
+    Object.values(room.players).filter(p =>
+      p.lastAnswerQuestion === qIndex && p.lastAnswer === i
+    ).length
+  );
+}
+
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -86,10 +103,10 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
-// REST API  –  /api/rooms/*   (used by admin.html)
+// REST API
 // ══════════════════════════════════════════════════════════════════════════════
 
-// POST /api/rooms  →  create room
+// POST /api/rooms → create room
 app.post('/api/rooms', (req, res) => {
   const { password, quizName } = req.body;
   if (password !== ADMIN_PASSWORD) {
@@ -112,7 +129,7 @@ app.post('/api/rooms', (req, res) => {
   res.json({ code, quizName: games[code].quizName });
 });
 
-// POST /api/rooms/:code/rejoin  →  admin rejoin
+// POST /api/rooms/:code/rejoin → admin rejoin
 app.post('/api/rooms/:code/rejoin', (req, res) => {
   const { password } = req.body;
   if (password !== ADMIN_PASSWORD) {
@@ -121,10 +138,7 @@ app.post('/api/rooms/:code/rejoin', (req, res) => {
   const room = games[req.params.code?.toUpperCase()];
   if (!room) return res.status(404).json({ error: 'Raum nicht gefunden' });
 
-  const players = Object.entries(room.players)
-    .filter(([name]) => name !== '__presenter__')
-    .map(([name, p]) => ({ name, score: p.score || 0 }))
-    .sort((a, b) => b.score - a.score);
+  const players = getLeaderboard(room);
 
   res.json({
     code:            room.code,
@@ -136,7 +150,7 @@ app.post('/api/rooms/:code/rejoin', (req, res) => {
   });
 });
 
-// PUT /api/rooms/:code/name  →  update quiz name
+// PUT /api/rooms/:code/name → update quiz name
 app.put('/api/rooms/:code/name', (req, res) => {
   const { password, quizName } = req.body;
   if (password !== ADMIN_PASSWORD) {
@@ -151,7 +165,7 @@ app.put('/api/rooms/:code/name', (req, res) => {
   res.json({ success: true, quizName: room.quizName });
 });
 
-// PUT /api/rooms/:code/questions  →  save questions
+// PUT /api/rooms/:code/questions → save questions
 app.put('/api/rooms/:code/questions', (req, res) => {
   const { password, questions } = req.body;
   if (password !== ADMIN_PASSWORD) {
@@ -165,7 +179,7 @@ app.put('/api/rooms/:code/questions', (req, res) => {
   res.json({ success: true, count: room.questions.length });
 });
 
-// GET /api/rooms/:code  →  room info (public)
+// GET /api/rooms/:code → room info (public)
 app.get('/api/rooms/:code', (req, res) => {
   const room = games[req.params.code?.toUpperCase()];
   if (!room) return res.status(404).json({ error: 'Raum nicht gefunden' });
@@ -178,7 +192,7 @@ app.get('/api/rooms/:code', (req, res) => {
   });
 });
 
-// DELETE /api/rooms/:code  →  delete room
+// DELETE /api/rooms/:code → delete room
 app.delete('/api/rooms/:code', (req, res) => {
   const { password } = req.body;
   if (password !== ADMIN_PASSWORD) {
@@ -193,30 +207,34 @@ app.delete('/api/rooms/:code', (req, res) => {
   res.json({ success: true });
 });
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Legacy routes  –  kept for backwards-compat / present.html
-// ══════════════════════════════════════════════════════════════════════════════
+// ── Legacy routes ─────────────────────────────────────────────────────────────
 app.post('/api/create-room', (req, res) => {
   req.url = '/api/rooms';
   app.handle(req, res);
 });
 app.post('/api/rejoin-room', (req, res) => {
-  const { password, code } = req.body;
+  const { code } = req.body;
   req.params = { code };
   req.url = `/api/rooms/${code}/rejoin`;
   app.handle(req, res);
 });
 
-// ── Serve SPA ─────────────────────────────────────────────────────────────────
+// ── Serve pages ───────────────────────────────────────────────────────────────
 app.get('/admin',   (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 app.get('/present', (req, res) => res.sendFile(path.join(__dirname, 'public', 'present.html')));
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Question Timer
+// Question Timer Logic
 // ══════════════════════════════════════════════════════════════════════════════
 function startQuestionTimer(roomCode) {
   const room = games[roomCode];
   if (!room) return;
+
+  // Clear any existing timer
+  if (room.timer) {
+    clearInterval(room.timer);
+    room.timer = null;
+  }
 
   const qIndex   = room.currentQuestion;
   const question = room.questions[qIndex];
@@ -225,7 +243,7 @@ function startQuestionTimer(roomCode) {
   const maxTime  = question.time || 30;
   let   timeLeft = maxTime;
 
-  // Reset answers for this question
+  // Reset per-question answer tracking
   room.questionAnswers = {};
 
   const questionData = {
@@ -241,7 +259,7 @@ function startQuestionTimer(roomCode) {
   };
 
   io.to(roomCode).emit('newQuestion', questionData);
-  console.log(`[Q] Room ${roomCode} → Q${qIndex + 1}: "${question.question}"`);
+  console.log(`[Q] Room ${roomCode} → Q${qIndex + 1}/${room.questions.length}: "${question.question}"`);
 
   room.timer = setInterval(() => {
     timeLeft--;
@@ -255,37 +273,58 @@ function startQuestionTimer(roomCode) {
   }, 1000);
 }
 
+// ── End Question ──────────────────────────────────────────────────────────────
 function endQuestion(roomCode) {
   const room = games[roomCode];
   if (!room) return;
 
-  const qIndex   = room.currentQuestion;
-  const question = room.questions[qIndex];
+  // Guard: don't end twice
+  if (room._endingQuestion) return;
+  room._endingQuestion = true;
 
-  // Build stats
-  const answerCounts = (question.options || []).map((_, i) =>
-    Object.values(room.players).filter(p =>
-      p.lastAnswer !== undefined &&
-      p.lastAnswer !== null &&
-      p.lastAnswerQuestion === qIndex &&
-      p.lastAnswer === i
-    ).length
-  );
+  const qIndex      = room.currentQuestion;
+  const question    = room.questions[qIndex];
+  const answerCounts = getAnswerCounts(room, qIndex);
+  const leaderboard  = getLeaderboard(room);
 
-  const leaderboard = Object.entries(room.players)
-    .filter(([name]) => name !== '__presenter__')
-    .map(([name, p]) => ({ name, score: p.score || 0 }))
-    .sort((a, b) => b.score - a.score);
+  console.log(`[END Q] Room ${roomCode} Q${qIndex + 1} — leaderboard:`, leaderboard);
 
   io.to(roomCode).emit('questionEnd', {
     correctAnswer: question.correctAnswer,
     answerCounts,
-    leaderboard,
-    question: question.question,
-    options:  question.options
+    leaderboard,        // ← always 'leaderboard' key
+    question:  question.question,
+    options:   question.options
   });
 
   saveGames(games);
+
+  // Reset guard after a short delay
+  setTimeout(() => {
+    if (games[roomCode]) games[roomCode]._endingQuestion = false;
+  }, 2000);
+}
+
+// ── Advance to next question or finish ────────────────────────────────────────
+function advanceGame(roomCode) {
+  const room = games[roomCode];
+  if (!room) return;
+
+  room.currentQuestion++;
+
+  if (room.currentQuestion >= room.questions.length) {
+    // ── Quiz finished ──
+    room.state = 'finished';
+    const finalLeaderboard = getLeaderboard(room);
+    saveGames(games);
+
+    console.log(`[FINISH] Room ${roomCode} — final leaderboard:`, finalLeaderboard);
+    io.to(roomCode).emit('gameFinished', { leaderboard: finalLeaderboard });
+  } else {
+    // ── Next question ──
+    saveGames(games);
+    startQuestionTimer(roomCode);
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -294,7 +333,7 @@ function endQuestion(roomCode) {
 io.on('connection', (socket) => {
   console.log(`[SOCKET] Connected: ${socket.id}`);
 
-  // ── Join ──────────────────────────────────────────────────────────────────
+  // ── Join Room ─────────────────────────────────────────────────────────────
   function handleJoin({ code, name }) {
     const roomCode = code?.toUpperCase();
     const room     = games[roomCode];
@@ -309,17 +348,22 @@ io.on('connection', (socket) => {
     }
 
     socket.join(roomCode);
-    socket.roomCode = roomCode;
+    socket.roomCode   = roomCode;
     socket.playerName = name;
 
     const isPresenter = name === '__presenter__';
 
-    if (!isPresenter) {
-      if (!room.players[name]) {
-        room.players[name] = { score: 0, answers: [], lastAnswer: null, lastAnswerQuestion: -1 };
-      }
-    } else {
+    if (isPresenter) {
       room.players['__presenter__'] = { score: 0, isPresenter: true };
+    } else {
+      if (!room.players[name]) {
+        room.players[name] = {
+          score:              0,
+          answers:            [],
+          lastAnswer:         null,
+          lastAnswerQuestion: -1
+        };
+      }
     }
 
     saveGames(games);
@@ -331,15 +375,18 @@ io.on('connection', (socket) => {
       quizName:  room.quizName,
       state:     room.state,
       players:   playerCount,
-      questions: room.questions?.length || 0
+      questions: room.questions?.length || 0,
+      currentQuestion: room.currentQuestion
     });
 
     if (!isPresenter) {
       io.to(roomCode).emit('playerJoined', { name, playerCount });
       console.log(`[JOIN] ${name} → ${roomCode} (${playerCount} players)`);
+    } else {
+      console.log(`[JOIN] Presenter → ${roomCode}`);
     }
 
-    // If game is already playing, send current question to late-joiners
+    // Late-join: send current question if game is in progress
     if (room.state === 'playing' && room.currentQuestion >= 0) {
       const question = room.questions[room.currentQuestion];
       if (question) {
@@ -358,8 +405,8 @@ io.on('connection', (socket) => {
     }
   }
 
-  socket.on('joinRoom',  handleJoin);
-  socket.on('joinGame',  handleJoin);
+  socket.on('joinRoom', handleJoin);
+  socket.on('joinGame', handleJoin);
 
   // ── Start Game ────────────────────────────────────────────────────────────
   socket.on('startGame', ({ code, password }) => {
@@ -370,7 +417,7 @@ io.on('connection', (socket) => {
     const roomCode = code?.toUpperCase();
     const room     = games[roomCode];
     if (!room) return;
-    if (room.state !== 'waiting') return;
+    if (room.state === 'playing') return; // already running
     if (!room.questions?.length) {
       socket.emit('error', { message: 'Keine Fragen vorhanden' });
       return;
@@ -378,21 +425,25 @@ io.on('connection', (socket) => {
 
     room.state           = 'playing';
     room.currentQuestion = 0;
+    room._endingQuestion = false;
 
-    // Reset all player scores
+    // Reset all player scores & answers
     for (const name of Object.keys(room.players)) {
-      room.players[name].score          = 0;
-      room.players[name].answers        = [];
-      room.players[name].lastAnswer     = null;
+      room.players[name].score              = 0;
+      room.players[name].answers            = [];
+      room.players[name].lastAnswer         = null;
       room.players[name].lastAnswerQuestion = -1;
     }
 
     saveGames(games);
-    io.to(roomCode).emit('gameStarted', { quizName: room.quizName });
+    io.to(roomCode).emit('gameStarted', {
+      quizName:       room.quizName,
+      totalQuestions: room.questions.length
+    });
     startQuestionTimer(roomCode);
   });
 
-  // ── Next Question (admin) ─────────────────────────────────────────────────
+  // ── Next Question (admin / presenter) ─────────────────────────────────────
   function handleNextQuestion({ code, password }) {
     if (password !== ADMIN_PASSWORD) {
       socket.emit('error', { message: 'Unauthorized' });
@@ -400,31 +451,21 @@ io.on('connection', (socket) => {
     }
     const roomCode = code?.toUpperCase();
     const room     = games[roomCode];
-    if (!room) return;
+    if (!room || room.state !== 'playing') return;
 
+    console.log(`[NEXT Q] Room ${roomCode} — requested by ${socket.playerName || socket.id}`);
+
+    // Stop timer if still running
     if (room.timer) {
       clearInterval(room.timer);
       room.timer = null;
     }
 
-    // End current question first (so stats are emitted)
+    // Emit questionEnd with current results, then advance
     endQuestion(roomCode);
 
-    // Small delay so clients can show the results screen
     setTimeout(() => {
-      room.currentQuestion++;
-      if (room.currentQuestion >= room.questions.length) {
-        room.state = 'finished';
-        const finalLeaderboard = Object.entries(room.players)
-          .filter(([name]) => name !== '__presenter__')
-          .map(([name, p]) => ({ name, score: p.score || 0 }))
-          .sort((a, b) => b.score - a.score);
-        saveGames(games);
-        io.to(roomCode).emit('gameFinished', { leaderboard: finalLeaderboard });
-      } else {
-        saveGames(games);
-        startQuestionTimer(roomCode);
-      }
+      advanceGame(roomCode);
     }, 1500);
   }
 
@@ -442,7 +483,6 @@ io.on('connection', (socket) => {
     if (!player || name === '__presenter__') return;
 
     const qIndex = room.currentQuestion;
-
     // Prevent double-answering the same question
     if (player.lastAnswerQuestion === qIndex) return;
 
@@ -459,37 +499,33 @@ io.on('connection', (socket) => {
 
     saveGames(games);
 
-    socket.emit('answerResult', { correct: isCorrect, points, score: player.score });
+    // Send result to answering player
+    socket.emit('answerResult', {
+      correct: isCorrect,
+      points,
+      score: player.score
+    });
 
-    // Live answer distribution
-    const answerCounts = (question.options || []).map((_, i) =>
-      Object.values(room.players).filter(p =>
-        p.lastAnswerQuestion === qIndex && p.lastAnswer === i
-      ).length
-    );
+    // Broadcast live answer counts to all in room
+    const answerCounts = getAnswerCounts(room, qIndex);
     io.to(roomCode).emit('answerUpdate', { answerCounts });
 
-    // Auto-advance if all active players answered
-    const activePlayers = Object.entries(room.players).filter(([n]) => n !== '__presenter__');
-    const allAnswered   = activePlayers.every(([, p]) => p.lastAnswerQuestion === qIndex);
-    if (allAnswered && activePlayers.length > 0) {
+    console.log(`[ANSWER] ${name} in ${roomCode}: option ${answer} — ${isCorrect ? '✓' : '✗'} +${points}`);
+
+    // Auto-advance when ALL active players have answered
+    const activePlayers = Object.entries(room.players)
+      .filter(([n]) => n !== '__presenter__');
+    const allAnswered = activePlayers.length > 0 &&
+      activePlayers.every(([, p]) => p.lastAnswerQuestion === qIndex);
+
+    if (allAnswered) {
+      console.log(`[AUTO-ADVANCE] All ${activePlayers.length} players answered in ${roomCode}`);
       setTimeout(() => {
-        if (room.timer) { clearInterval(room.timer); room.timer = null; }
+        if (!room.timer) return; // timer already stopped (manual advance)
+        clearInterval(room.timer);
+        room.timer = null;
         endQuestion(roomCode);
-        setTimeout(() => {
-          room.currentQuestion++;
-          if (room.currentQuestion >= room.questions.length) {
-            room.state = 'finished';
-            const finalLeaderboard = activePlayers
-              .map(([name, p]) => ({ name, score: p.score || 0 }))
-              .sort((a, b) => b.score - a.score);
-            saveGames(games);
-            io.to(roomCode).emit('gameFinished', { leaderboard: finalLeaderboard });
-          } else {
-            saveGames(games);
-            startQuestionTimer(roomCode);
-          }
-        }, 1500);
+        setTimeout(() => advanceGame(roomCode), 1500);
       }, 500);
     }
   });
@@ -507,12 +543,10 @@ io.on('connection', (socket) => {
     if (room.timer) { clearInterval(room.timer); room.timer = null; }
 
     room.state = 'finished';
-    const finalLeaderboard = Object.entries(room.players)
-      .filter(([name]) => name !== '__presenter__')
-      .map(([name, p]) => ({ name, score: p.score || 0 }))
-      .sort((a, b) => b.score - a.score);
-
+    const finalLeaderboard = getLeaderboard(room);
     saveGames(games);
+
+    console.log(`[END GAME] Room ${roomCode} — leaderboard:`, finalLeaderboard);
     io.to(roomCode).emit('gameFinished', { leaderboard: finalLeaderboard });
   });
 
@@ -531,6 +565,7 @@ io.on('connection', (socket) => {
     room.state           = 'waiting';
     room.currentQuestion = -1;
     room.questionAnswers = {};
+    room._endingQuestion = false;
 
     for (const name of Object.keys(room.players)) {
       room.players[name].score              = 0;
@@ -541,6 +576,7 @@ io.on('connection', (socket) => {
 
     saveGames(games);
     io.to(roomCode).emit('gameReset', { message: 'Game reset' });
+    console.log(`[RESET] Room ${roomCode}`);
   });
 
   // ── Disconnect ────────────────────────────────────────────────────────────
@@ -556,7 +592,9 @@ io.on('connection', (socket) => {
       saveGames(games);
     }
 
-    const playerCount = Object.keys(room.players).filter(n => n !== '__presenter__').length;
+    const playerCount = Object.keys(room.players)
+      .filter(n => n !== '__presenter__').length;
+
     io.to(roomCode).emit('playerLeft', { name: playerName, playerCount });
     console.log(`[LEAVE] ${playerName} ← ${roomCode} (${playerCount} players)`);
   });
@@ -565,4 +603,6 @@ io.on('connection', (socket) => {
 // ── Start server ──────────────────────────────────────────────────────────────
 server.listen(PORT, () => {
   console.log(`✅ PollWave running on port ${PORT}`);
+  console.log(`   Admin:     http://localhost:${PORT}/admin`);
+  console.log(`   Presenter: http://localhost:${PORT}/present`);
 });
