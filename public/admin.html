@@ -433,7 +433,6 @@
     .image-upload-area:hover { border-color: #FF6600; background: rgba(255,102,0,0.05); }
     .image-preview { max-width: 100%; max-height: 180px; border-radius: 8px; margin-top: 10px; object-fit: contain; }
 
-    /* Image controls grid */
     .img-controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 12px; }
     .img-control-group label {
       display: block;
@@ -444,20 +443,7 @@
       letter-spacing: 0.5px;
       margin-bottom: 6px;
     }
-    .img-control-group select {
-      width: 100%;
-      padding: 8px 10px;
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 8px;
-      color: #fff;
-      font-size: 13px;
-      cursor: pointer;
-    }
-    .img-control-group select:focus { outline: none; border-color: #FF6600; }
-    .img-control-group select option { background: #1a1a2e; }
 
-    /* Chip-style buttons for image settings */
     .chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
     .chip {
       padding: 5px 12px;
@@ -604,6 +590,8 @@
       <button class="tab-btn active" onclick="switchTab('new')">➕ Neuer Raum</button>
       <button class="tab-btn" onclick="switchTab('rejoin')">🔄 Rejoinen</button>
     </div>
+
+    <!-- New Room -->
     <div id="tabNew">
       <div class="form-group">
         <label>Quiz Name</label>
@@ -611,23 +599,30 @@
       </div>
       <div class="form-group">
         <label>Admin Passwort</label>
-        <input type="password" id="newPassword" placeholder="Passwort eingeben" />
+        <input type="password" id="newPassword" placeholder="Passwort eingeben"
+          onkeydown="if(event.key==='Enter') createRoom()" />
       </div>
       <button class="btn-primary" onclick="createRoom()">🚀 Raum erstellen</button>
     </div>
+
+    <!-- Rejoin -->
     <div id="tabRejoin" style="display:none">
       <div class="form-group">
         <label>Raum Code</label>
-        <input type="text" id="rejoinCode" placeholder="z.B. ABC123" maxlength="6" style="text-transform:uppercase" />
+        <input type="text" id="rejoinCode" placeholder="z.B. ABC123" maxlength="6"
+          style="text-transform:uppercase"
+          oninput="this.value=this.value.toUpperCase()" />
       </div>
       <div class="form-group">
         <label>Admin Passwort</label>
-        <input type="password" id="rejoinPassword" placeholder="Passwort eingeben" />
+        <input type="password" id="rejoinPassword" placeholder="Passwort eingeben"
+          onkeydown="if(event.key==='Enter') rejoinRoom()" />
       </div>
       <button class="btn-primary" onclick="rejoinRoom()">🔄 Rejoinen</button>
     </div>
   </div>
 
+  <!-- Saved Rooms -->
   <div class="saved-rooms-card" id="savedRoomsCard">
     <h3>💾 Gespeicherte Räume</h3>
     <div id="savedRoomsList">
@@ -651,12 +646,14 @@
     </div>
   </div>
 
+  <!-- QR Code -->
   <div class="qr-section">
     <div style="font-weight:700; margin-bottom:8px;">📱 QR Code für Spieler</div>
     <div id="qrCode"></div>
     <div style="color:#aaa; font-size:13px; margin-top:8px;" id="joinUrl"></div>
   </div>
 
+  <!-- Stats -->
   <div class="stats-row">
     <div class="stat-card">
       <div class="stat-value" id="statPlayers">0</div>
@@ -676,6 +673,7 @@
     </div>
   </div>
 
+  <!-- Controls -->
   <div class="controls-row">
     <button class="btn-control btn-start"   id="btnStart"   onclick="startGame()">▶ Start</button>
     <button class="btn-control btn-next"    id="btnNext"    onclick="nextQuestion()" disabled>⏭ Nächste Frage</button>
@@ -684,11 +682,13 @@
     <button class="btn-control btn-present" id="btnPresent" onclick="openPresentation()">🖥️ Präsentation</button>
   </div>
 
+  <!-- Questions -->
   <div class="section-title">📝 Fragen</div>
   <div class="question-list" id="questionList"></div>
   <button class="btn-add-question" onclick="addQuestion()">➕ Frage hinzufügen</button>
   <button class="btn-save-questions" onclick="saveQuestions()">💾 Fragen speichern</button>
 
+  <!-- Leaderboard -->
   <div class="leaderboard" id="leaderboardSection" style="display:none">
     <div class="section-title">🏆 Rangliste</div>
     <div id="leaderboardList"></div>
@@ -699,37 +699,45 @@
 
 <script>
   const socket = io();
-  let roomCode = '';
-  let adminPassword = '';
-  let questions = [];
-  let gameState = 'waiting';
+  let roomCode        = '';
+  let adminPassword   = '';
+  let questions       = [];
+  let gameState       = 'waiting';
   let currentQuizName = 'PollWave Quiz';
 
-  const OPTION_COLORS = ['#e74c3c','#3498db','#f1c40f','#2ecc71'];
+  const OPTION_COLORS   = ['#e74c3c','#3498db','#f1c40f','#2ecc71'];
   const MAX_SAVED_ROOMS = 10;
-  const STORAGE_KEY = 'pollwave_saved_rooms';
+  const STORAGE_KEY     = 'pollwave_saved_rooms';
 
-  // ── Tabs ──
+  // ── Tabs ────────────────────────────────────────────────────────────────────
   function switchTab(tab) {
-    document.querySelectorAll('.tab-btn').forEach((b,i) =>
+    document.querySelectorAll('.tab-btn').forEach((b, i) =>
       b.classList.toggle('active', (tab==='new'&&i===0)||(tab==='rejoin'&&i===1)));
     document.getElementById('tabNew').style.display    = tab === 'new'    ? 'block' : 'none';
     document.getElementById('tabRejoin').style.display = tab === 'rejoin' ? 'block' : 'none';
   }
 
-  // ── Toast ──
-  function showToast(msg) {
+  // ── Toast ───────────────────────────────────────────────────────────────────
+  function showToast(msg, duration = 3000) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3000);
+    setTimeout(() => t.classList.remove('show'), duration);
   }
 
-  // ── Saved Rooms ──
+  // ── HTML escape ─────────────────────────────────────────────────────────────
+  function escHtml(str) {
+    return String(str || '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Saved Rooms ─────────────────────────────────────────────────────────────
   function getSavedRooms() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
     catch { return []; }
   }
+
   function saveRoomToStorage(code, quizName) {
     let rooms = getSavedRooms().filter(r => r.code !== code);
     rooms.unshift({ code, quizName: quizName || 'PollWave Quiz', date: new Date().toLocaleDateString('de-CH') });
@@ -737,12 +745,14 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(rooms));
     renderSavedRooms();
   }
+
   function deleteSavedRoom(code) {
-    let rooms = getSavedRooms().filter(r => r.code !== code);
+    const rooms = getSavedRooms().filter(r => r.code !== code);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(rooms));
     renderSavedRooms();
     showToast('🗑 Raum entfernt');
   }
+
   function renderSavedRooms() {
     const rooms = getSavedRooms();
     const list  = document.getElementById('savedRoomsList');
@@ -752,13 +762,14 @@
     }
     list.innerHTML = rooms.map(r => `
       <div class="saved-room-item">
-        <div class="saved-room-code">${r.code}</div>
+        <div class="saved-room-code">${escHtml(r.code)}</div>
         <div class="saved-room-name">${escHtml(r.quizName)}</div>
-        <div class="saved-room-date">${r.date}</div>
-        <button class="btn-open-room" onclick="quickRejoin('${r.code}')">▶ Öffnen</button>
-        <button class="btn-delete-room" onclick="deleteSavedRoom('${r.code}')">🗑</button>
+        <div class="saved-room-date">${escHtml(r.date)}</div>
+        <button class="btn-open-room" onclick="quickRejoin('${escHtml(r.code)}')">▶ Öffnen</button>
+        <button class="btn-delete-room" onclick="deleteSavedRoom('${escHtml(r.code)}')">🗑</button>
       </div>`).join('');
   }
+
   function quickRejoin(code) {
     switchTab('rejoin');
     document.getElementById('rejoinCode').value = code;
@@ -766,96 +777,143 @@
     showToast('🔑 Passwort eingeben und Rejoinen');
   }
 
-  // ── Presentation ──
+  // ── Presentation ────────────────────────────────────────────────────────────
   function openPresentation() {
     if (!roomCode) return showToast('❌ Kein aktiver Raum');
     window.open(`${window.location.origin}/present.html?room=${roomCode}`, '_blank');
   }
 
-  // ── Create / Rejoin ──
+  // ── Create Room ─────────────────────────────────────────────────────────────
   async function createRoom() {
     const quizName = document.getElementById('newQuizName').value.trim() || 'PollWave Quiz';
     const password = document.getElementById('newPassword').value.trim();
     if (!password) return showToast('❌ Passwort eingeben');
-    const res  = await fetch('/api/rooms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password, quizName })
-    });
-    const data = await res.json();
-    if (!res.ok) return showToast('❌ ' + data.error);
-    adminPassword   = password;
-    currentQuizName = quizName;
-    saveRoomToStorage(data.code, quizName);
-    initDashboard(data.code, quizName, [], 'waiting', -1, []);
+
+    try {
+      const res  = await fetch('/api/rooms', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ password, quizName })
+      });
+      const data = await res.json();
+      if (!res.ok) return showToast('❌ ' + (data.error || 'Fehler'));
+
+      adminPassword   = password;
+      currentQuizName = quizName;
+      saveRoomToStorage(data.code, quizName);
+      initDashboard(data.code, quizName, [], 'waiting', -1, []);
+      showToast(`✅ Raum ${data.code} erstellt!`);
+    } catch (err) {
+      console.error(err);
+      showToast('❌ Verbindungsfehler');
+    }
   }
 
+  // ── Rejoin Room ─────────────────────────────────────────────────────────────
   async function rejoinRoom() {
     const code     = document.getElementById('rejoinCode').value.trim().toUpperCase();
     const password = document.getElementById('rejoinPassword').value.trim();
-    if (!code || !password) return showToast('❌ Alle Felder ausfüllen');
-    const res  = await fetch(`/api/rooms/${code}/rejoin`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password })
-    });
-    const data = await res.json();
-    if (!res.ok) return showToast('❌ ' + data.error);
-    adminPassword   = password;
-    currentQuizName = data.quizName || 'PollWave Quiz';
-    saveRoomToStorage(data.code, currentQuizName);
-    initDashboard(data.code, currentQuizName, data.questions || [], data.state, data.currentQuestion, data.players || []);
+    if (!code)     return showToast('❌ Raum Code eingeben');
+    if (!password) return showToast('❌ Passwort eingeben');
+
+    try {
+      const res  = await fetch(`/api/rooms/${code}/rejoin`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ password })
+      });
+      const data = await res.json();
+      if (!res.ok) return showToast('❌ ' + (data.error || 'Fehler'));
+
+      adminPassword   = password;
+      currentQuizName = data.quizName || 'PollWave Quiz';
+      saveRoomToStorage(data.code, currentQuizName);
+      initDashboard(
+        data.code,
+        currentQuizName,
+        data.questions       || [],
+        data.state           || 'waiting',
+        data.currentQuestion ?? -1,
+        data.players         || []
+      );
+      showToast(`✅ Raum ${data.code} geladen!`);
+    } catch (err) {
+      console.error(err);
+      showToast('❌ Verbindungsfehler');
+    }
   }
 
+  // ── Init Dashboard ──────────────────────────────────────────────────────────
   function initDashboard(code, quizName, qs, state, currentQ, players) {
     roomCode  = code;
-    questions = qs;
+    questions = qs.map(q => ({
+      question:      q.question      || '',
+      options:       q.options       || ['','','',''],
+      correctAnswer: q.correctAnswer ?? 0,
+      time:          q.time          || 30,
+      image:         q.image         || null,
+      imagePosition: q.imagePosition || 'right',
+      imageSize:     q.imageSize     || 'medium',
+      imageFit:      q.imageFit      || 'cover'
+    }));
     gameState = state;
+
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('dashboard').style.display   = 'block';
     document.getElementById('displayCode').textContent   = code;
     document.getElementById('quizNameInput').value       = quizName;
+
     generateQR(code);
     renderQuestions();
-    updateStats(players.length, qs.length, currentQ, state);
+    updateStats(players.length, questions.length, currentQ, state);
     updateButtons(state);
+
+    // Join as presenter to receive live events
     socket.emit('joinRoom', { code, name: '__presenter__' });
   }
 
-  // ── QR ──
+  // ── QR Code ─────────────────────────────────────────────────────────────────
   function generateQR(code) {
     const url = `${window.location.origin}?code=${code}`;
-    document.getElementById('joinUrl').textContent = url;
+    document.getElementById('joinUrl').textContent  = url;
     document.getElementById('qrCode').innerHTML =
-      `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}" />`;
+      `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}" alt="QR" />`;
   }
 
-  // ── Quiz Name ──
+  // ── Quiz Name ────────────────────────────────────────────────────────────────
   async function saveQuizName() {
     const name = document.getElementById('quizNameInput').value.trim();
     if (!name) return showToast('❌ Name eingeben');
-    const res = await fetch(`/api/rooms/${roomCode}/name`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: adminPassword, quizName: name })
-    });
-    if (res.ok) {
-      currentQuizName = name;
-      saveRoomToStorage(roomCode, name);
-      showToast('✅ Quiz Name gespeichert');
-    } else {
-      showToast('❌ Fehler beim Speichern');
+
+    try {
+      const res = await fetch(`/api/rooms/${roomCode}/name`, {
+        method:  'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ password: adminPassword, quizName: name })
+      });
+      if (res.ok) {
+        currentQuizName = name;
+        saveRoomToStorage(roomCode, name);
+        showToast('✅ Quiz Name gespeichert');
+      } else {
+        const data = await res.json();
+        showToast('❌ ' + (data.error || 'Fehler'));
+      }
+    } catch (err) {
+      showToast('❌ Verbindungsfehler');
     }
   }
 
-  // ── Stats & Buttons ──
-  function updateStats(players, qCount, currentQ, state) {
-    document.getElementById('statPlayers').textContent   = players;
+  // ── Stats & Buttons ──────────────────────────────────────────────────────────
+  function updateStats(playerCount, qCount, currentQ, state) {
+    document.getElementById('statPlayers').textContent   = playerCount;
     document.getElementById('statQuestions').textContent = qCount;
-    document.getElementById('statCurrent').textContent   = currentQ >= 0 ? `${currentQ+1}/${qCount}` : '-';
-    document.getElementById('statState').textContent     = state === 'waiting' ? '⏳' : state === 'playing' ? '▶' : '✅';
-    document.getElementById('displayMeta').textContent   = `${players} Spieler · ${qCount} Fragen`;
+    document.getElementById('statCurrent').textContent   = currentQ >= 0 ? `${currentQ + 1}/${qCount}` : '-';
+    document.getElementById('statState').textContent     =
+      state === 'waiting' ? '⏳' : state === 'playing' ? '▶' : '✅';
+    document.getElementById('displayMeta').textContent   = `${playerCount} Spieler · ${qCount} Fragen`;
   }
+
   function updateButtons(state) {
     gameState = state;
     document.getElementById('btnStart').disabled = state !== 'waiting';
@@ -863,83 +921,88 @@
     document.getElementById('btnEnd').disabled   = state !== 'playing';
   }
 
-  // ── Game Controls ──
-  function startGame()    { socket.emit('startGame',         { code: roomCode, password: adminPassword }); }
-  function nextQuestion() { socket.emit('adminNextQuestion', { code: roomCode, password: adminPassword }); }
-  function endGame()      { socket.emit('endGame',           { code: roomCode, password: adminPassword }); }
-  function resetGame()    { socket.emit('resetGame',         { code: roomCode, password: adminPassword }); }
+  // ── Game Controls ────────────────────────────────────────────────────────────
+  function startGame() {
+    socket.emit('startGame', { code: roomCode, password: adminPassword });
+  }
+  function nextQuestion() {
+    socket.emit('adminNextQuestion', { code: roomCode, password: adminPassword });
+  }
+  function endGame() {
+    socket.emit('endGame', { code: roomCode, password: adminPassword });
+  }
+  function resetGame() {
+    if (!confirm('Spiel wirklich zurücksetzen? Alle Punkte werden gelöscht.')) return;
+    socket.emit('resetGame', { code: roomCode, password: adminPassword });
+  }
 
-  // ── Questions Render ──
+  // ── Render Questions ─────────────────────────────────────────────────────────
   function renderQuestions() {
     const list = document.getElementById('questionList');
     list.innerHTML = '';
     questions.forEach((q, i) => list.appendChild(buildQuestionCard(q, i)));
     document.getElementById('statQuestions').textContent = questions.length;
-  }
-
-  // ── Image Settings Chips ──
-  function setImageProp(i, prop, value) {
-    questions[i][prop] = value;
-    // Update chip UI
-    const group = document.querySelectorAll(`[data-q="${i}"][data-prop="${prop}"]`);
-    group.forEach(chip => chip.classList.toggle('active', chip.dataset.val === value));
+    document.getElementById('displayMeta').textContent   =
+      `${document.getElementById('statPlayers').textContent} Spieler · ${questions.length} Fragen`;
   }
 
   function buildQuestionCard(q, i) {
     const card = document.createElement('div');
     card.className = 'question-card';
 
-    // Defaults for image settings
     const imgPos  = q.imagePosition || 'right';
     const imgSize = q.imageSize     || 'medium';
     const imgFit  = q.imageFit      || 'cover';
 
     const posOptions  = [
-      { v:'left',       l:'◀ Links' },
-      { v:'right',      l:'▶ Rechts' },
-      { v:'top',        l:'▲ Oben' },
-      { v:'bottom',     l:'▼ Unten' },
-      { v:'background', l:'🖼 Hintergrund' }
+      { v: 'left',       l: '◀ Links' },
+      { v: 'right',      l: '▶ Rechts' },
+      { v: 'top',        l: '▲ Oben' },
+      { v: 'bottom',     l: '▼ Unten' },
+      { v: 'background', l: '🖼 Hintergrund' }
     ];
     const sizeOptions = [
-      { v:'small',  l:'S' },
-      { v:'medium', l:'M' },
-      { v:'large',  l:'L' },
-      { v:'full',   l:'Full' }
+      { v: 'small',  l: 'S' },
+      { v: 'medium', l: 'M' },
+      { v: 'large',  l: 'L' },
+      { v: 'full',   l: 'Full' }
     ];
     const fitOptions  = [
-      { v:'cover',   l:'Cover' },
-      { v:'contain', l:'Contain' },
-      { v:'fill',    l:'Fill' }
+      { v: 'cover',   l: 'Cover' },
+      { v: 'contain', l: 'Contain' },
+      { v: 'fill',    l: 'Fill' }
     ];
 
     card.innerHTML = `
       <div class="question-header" onclick="toggleCard(${i})">
-        <div class="q-number">${i+1}</div>
-        <div class="q-title">${q.question || 'Neue Frage'}</div>
-        <div class="q-meta">⏱ ${q.time||30}s</div>
+        <div class="q-number">${i + 1}</div>
+        <div class="q-title">${escHtml(q.question || 'Neue Frage')}</div>
+        <div class="q-meta">⏱ ${q.time || 30}s</div>
         <div class="q-toggle">▼</div>
       </div>
       <div class="question-body">
-        <input class="input-field" placeholder="Frage eingeben…" value="${escHtml(q.question||'')}"
-          oninput="questions[${i}].question=this.value; updateCardTitle(${i},this.value)" />
+
+        <input class="input-field" placeholder="Frage eingeben…" value="${escHtml(q.question || '')}"
+          oninput="questions[${i}].question=this.value; updateCardTitle(${i}, this.value)" />
 
         <div class="time-presets">
-          ${[10,15,20,30,45,60,90,120].map(t =>
-            `<button class="preset-btn ${(q.time||30)==t?'active':''}"
-              onclick="setTime(${i},${t},this)">${t}s</button>`).join('')}
+          ${[10, 15, 20, 30, 45, 60, 90, 120].map(t =>
+            `<button class="preset-btn ${(q.time || 30) == t ? 'active' : ''}"
+              onclick="setTime(${i}, ${t}, this)">${t}s</button>`
+          ).join('')}
         </div>
 
         <div class="options-grid">
-          ${q.options.map((opt,j) => `
+          ${q.options.map((opt, j) => `
             <div class="option-row">
               <div class="option-color" style="background:${OPTION_COLORS[j]}"></div>
               <input class="option-input" value="${escHtml(opt)}"
                 oninput="questions[${i}].options[${j}]=this.value"
-                placeholder="Option ${j+1}" />
+                placeholder="Option ${j + 1}" />
               <input type="radio" class="option-correct" name="correct_${i}"
-                ${q.correctAnswer===j?'checked':''}
-                onchange="questions[${i}].correctAnswer=${j}" title="Richtige Antwort" />
+                ${q.correctAnswer === j ? 'checked' : ''}
+                onchange="questions[${i}].correctAnswer=${j}"
+                title="Richtige Antwort" />
             </div>`).join('')}
         </div>
 
@@ -949,9 +1012,9 @@
 
           <div class="image-upload-area" onclick="document.getElementById('imgInput_${i}').click()">
             <input type="file" id="imgInput_${i}" accept="image/*" style="display:none"
-              onchange="uploadImage(event,${i})" />
+              onchange="uploadImage(event, ${i})" />
             ${q.image
-              ? `<img src="${q.image}" class="image-preview" />`
+              ? `<img src="${escHtml(q.image)}" class="image-preview" />`
               : `<div>🖼 Bild hochladen (optional)</div>
                  <div style="color:#aaa;font-size:13px;margin-top:4px">Klicken · max. 5MB</div>`}
           </div>
@@ -960,16 +1023,15 @@
             <button class="btn-remove-image" onclick="removeImage(${i})">🗑 Bild entfernen</button>
           ` : ''}
 
-          <!-- Image Controls (only shown if image exists) -->
           <div id="imgControls_${i}" style="${q.image ? '' : 'display:none'}">
             <div class="img-controls">
               <div class="img-control-group">
                 <label>📐 Position</label>
                 <div class="chip-group">
                   ${posOptions.map(o => `
-                    <div class="chip ${imgPos===o.v?'active':''}"
+                    <div class="chip ${imgPos === o.v ? 'active' : ''}"
                       data-q="${i}" data-prop="imagePosition" data-val="${o.v}"
-                      onclick="setImageProp(${i},'imagePosition','${o.v}')">${o.l}</div>
+                      onclick="setImageProp(${i}, 'imagePosition', '${o.v}')">${o.l}</div>
                   `).join('')}
                 </div>
               </div>
@@ -977,9 +1039,9 @@
                 <label>📏 Grösse</label>
                 <div class="chip-group">
                   ${sizeOptions.map(o => `
-                    <div class="chip ${imgSize===o.v?'active':''}"
+                    <div class="chip ${imgSize === o.v ? 'active' : ''}"
                       data-q="${i}" data-prop="imageSize" data-val="${o.v}"
-                      onclick="setImageProp(${i},'imageSize','${o.v}')">${o.l}</div>
+                      onclick="setImageProp(${i}, 'imageSize', '${o.v}')">${o.l}</div>
                   `).join('')}
                 </div>
               </div>
@@ -987,9 +1049,9 @@
                 <label>✂️ Zuschnitt</label>
                 <div class="chip-group">
                   ${fitOptions.map(o => `
-                    <div class="chip ${imgFit===o.v?'active':''}"
+                    <div class="chip ${imgFit === o.v ? 'active' : ''}"
                       data-q="${i}" data-prop="imageFit" data-val="${o.v}"
-                      onclick="setImageProp(${i},'imageFit','${o.v}')">${o.l}</div>
+                      onclick="setImageProp(${i}, 'imageFit', '${o.v}')">${o.l}</div>
                   `).join('')}
                 </div>
               </div>
@@ -1001,135 +1063,189 @@
           <button class="btn-delete" onclick="deleteQuestion(${i})">🗑 Löschen</button>
         </div>
       </div>`;
+
     return card;
   }
 
-  function removeImage(i) {
-    questions[i].image = null;
-    questions[i].imagePosition = 'right';
-    questions[i].imageSize = 'medium';
-    questions[i].imageFit = 'cover';
-    renderQuestions();
-    // Re-open the card
-    const cards = document.querySelectorAll('.question-card');
-    cards[i].classList.add('open');
+  // ── Image Prop ───────────────────────────────────────────────────────────────
+  function setImageProp(i, prop, value) {
+    questions[i][prop] = value;
+    document.querySelectorAll(`[data-q="${i}"][data-prop="${prop}"]`)
+      .forEach(chip => chip.classList.toggle('active', chip.dataset.val === value));
   }
 
+  function removeImage(i) {
+    questions[i].image         = null;
+    questions[i].imagePosition = 'right';
+    questions[i].imageSize     = 'medium';
+    questions[i].imageFit      = 'cover';
+    renderQuestions();
+    const cards = document.querySelectorAll('.question-card');
+    if (cards[i]) cards[i].classList.add('open');
+  }
+
+  // ── Card helpers ─────────────────────────────────────────────────────────────
   function toggleCard(i) {
-    document.querySelectorAll('.question-card')[i].classList.toggle('open');
+    const cards = document.querySelectorAll('.question-card');
+    if (cards[i]) cards[i].classList.toggle('open');
   }
+
   function updateCardTitle(i, val) {
-    document.querySelectorAll('.question-card')[i].querySelector('.q-title').textContent = val || 'Neue Frage';
+    const cards = document.querySelectorAll('.question-card');
+    if (cards[i]) cards[i].querySelector('.q-title').textContent = val || 'Neue Frage';
   }
+
   function setTime(i, t, btn) {
     questions[i].time = t;
-    btn.closest('.time-presets').querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    btn.closest('.time-presets').querySelectorAll('.preset-btn')
+      .forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    document.querySelectorAll('.question-card')[i].querySelector('.q-meta').textContent = `⏱ ${t}s`;
   }
 
-  function escHtml(str) {
-    return String(str)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
+  // ── Add / Delete Question ────────────────────────────────────────────────────
   function addQuestion() {
     questions.push({
-      question: '', options: ['','','',''], correctAnswer: 0, time: 30,
+      question: '', options: ['', '', '', ''], correctAnswer: 0, time: 30,
       image: null, imagePosition: 'right', imageSize: 'medium', imageFit: 'cover'
     });
     renderQuestions();
     const cards = document.querySelectorAll('.question-card');
-    cards[cards.length-1].classList.add('open');
-    cards[cards.length-1].scrollIntoView({ behavior: 'smooth' });
+    const last  = cards[cards.length - 1];
+    if (last) {
+      last.classList.add('open');
+      last.scrollIntoView({ behavior: 'smooth' });
+    }
   }
 
   function deleteQuestion(i) {
+    if (!confirm(`Frage ${i + 1} wirklich löschen?`)) return;
     questions.splice(i, 1);
     renderQuestions();
   }
 
+  // ── Upload Image ─────────────────────────────────────────────────────────────
   async function uploadImage(event, i) {
     const file = event.target.files[0];
     if (!file) return;
+
+    showToast('⏳ Bild wird hochgeladen…');
     const fd = new FormData();
     fd.append('image', file);
-    const res  = await fetch('/api/upload', { method: 'POST', body: fd });
-    const data = await res.json();
-    if (data.url) {
-      questions[i].image         = data.url;
-      questions[i].imagePosition = questions[i].imagePosition || 'right';
-      questions[i].imageSize     = questions[i].imageSize     || 'medium';
-      questions[i].imageFit      = questions[i].imageFit      || 'cover';
-      renderQuestions();
-      // Re-open the card
-      const cards = document.querySelectorAll('.question-card');
-      cards[i].classList.add('open');
-      showToast('✅ Bild hochgeladen');
+
+    try {
+      const res  = await fetch('/api/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.url) {
+        questions[i].image         = data.url;
+        questions[i].imagePosition = questions[i].imagePosition || 'right';
+        questions[i].imageSize     = questions[i].imageSize     || 'medium';
+        questions[i].imageFit      = questions[i].imageFit      || 'cover';
+        renderQuestions();
+        const cards = document.querySelectorAll('.question-card');
+        if (cards[i]) cards[i].classList.add('open');
+        showToast('✅ Bild hochgeladen');
+      } else {
+        showToast('❌ Upload fehlgeschlagen');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('❌ Upload Fehler');
     }
   }
 
+  // ── Save Questions ───────────────────────────────────────────────────────────
   async function saveQuestions() {
-    const res = await fetch(`/api/rooms/${roomCode}/questions`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: adminPassword, questions })
-    });
-    if (res.ok) showToast('✅ Fragen gespeichert');
-    else showToast('❌ Fehler beim Speichern');
+    try {
+      const res = await fetch(`/api/rooms/${roomCode}/questions`, {
+        method:  'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ password: adminPassword, questions })
+      });
+      if (res.ok) {
+        showToast('✅ Fragen gespeichert');
+      } else {
+        const data = await res.json();
+        showToast('❌ ' + (data.error || 'Fehler beim Speichern'));
+      }
+    } catch (err) {
+      showToast('❌ Verbindungsfehler');
+    }
   }
 
-  // ── Socket Events ──
-  socket.on('playerJoined', ({ playerCount }) => {
-    document.getElementById('statPlayers').textContent = playerCount;
-    document.getElementById('displayMeta').textContent = `${playerCount} Spieler · ${questions.length} Fragen`;
-  });
-  socket.on('playerLeft', ({ playerCount }) => {
-    document.getElementById('statPlayers').textContent = playerCount;
-  });
-  socket.on('gameStarted', () => {
-    updateButtons('playing');
-    showToast('▶ Spiel gestartet!');
-  });
-  socket.on('newQuestion', ({ index, total }) => {
-    document.getElementById('statCurrent').textContent = `${index+1}/${total}`;
-    updateButtons('playing');
-  });
-  socket.on('questionEnd', ({ stats }) => {
-    showLeaderboard(stats);
-  });
-  socket.on('gameFinished', ({ players }) => {
-    updateButtons('finished');
-    showLeaderboard(players);
-    showToast('🏆 Spiel beendet!');
-  });
-  socket.on('gameReset', () => {
-    updateButtons('waiting');
-    document.getElementById('statCurrent').textContent = '-';
-    document.getElementById('leaderboardSection').style.display = 'none';
-    showToast('🔄 Spiel zurückgesetzt');
-  });
-  socket.on('quizNameUpdated', ({ quizName }) => {
-    document.getElementById('quizNameInput').value = quizName;
-    currentQuizName = quizName;
-    saveRoomToStorage(roomCode, quizName);
-  });
-
+  // ── Leaderboard ──────────────────────────────────────────────────────────────
   function showLeaderboard(players) {
+    if (!players?.length) return;
     const section = document.getElementById('leaderboardSection');
     const list    = document.getElementById('leaderboardList');
     section.style.display = 'block';
-    const medals = ['🥇','🥈','🥉'];
-    list.innerHTML = players.slice(0,10).map((p,i) => `
+    const medals = ['🥇', '🥈', '🥉'];
+    list.innerHTML = players.slice(0, 10).map((p, i) => `
       <div class="leaderboard-item">
-        <div class="lb-rank">${medals[i]||i+1}</div>
+        <div class="lb-rank">${medals[i] || i + 1}</div>
         <div class="lb-name">${escHtml(p.name)}</div>
         <div class="lb-score">${p.score} Pts</div>
       </div>`).join('');
     section.scrollIntoView({ behavior: 'smooth' });
   }
 
-  // ── Init ──
+  // ── Socket Events ─────────────────────────────────────────────────────────────
+  socket.on('connect', () => {
+    console.log('[SOCKET] Connected:', socket.id);
+    // Re-join if already in a room (e.g. after reconnect)
+    if (roomCode) {
+      socket.emit('joinRoom', { code: roomCode, name: '__presenter__' });
+    }
+  });
+
+  socket.on('error', ({ message }) => {
+    showToast('❌ ' + message);
+  });
+
+  socket.on('playerJoined', ({ playerCount }) => {
+    document.getElementById('statPlayers').textContent = playerCount;
+    document.getElementById('displayMeta').textContent = `${playerCount} Spieler · ${questions.length} Fragen`;
+  });
+
+  socket.on('playerLeft', ({ playerCount }) => {
+    document.getElementById('statPlayers').textContent = playerCount;
+    document.getElementById('displayMeta').textContent = `${playerCount} Spieler · ${questions.length} Fragen`;
+  });
+
+  socket.on('gameStarted', () => {
+    updateButtons('playing');
+    showToast('▶ Spiel gestartet!');
+  });
+
+  socket.on('newQuestion', ({ index, total }) => {
+    document.getElementById('statCurrent').textContent = `${index + 1}/${total}`;
+    updateButtons('playing');
+  });
+
+  socket.on('questionEnd', ({ leaderboard }) => {
+    if (leaderboard) showLeaderboard(leaderboard);
+  });
+
+  socket.on('gameFinished', ({ leaderboard }) => {
+    updateButtons('finished');
+    if (leaderboard) showLeaderboard(leaderboard);
+    showToast('🏆 Spiel beendet!');
+  });
+
+  socket.on('gameReset', () => {
+    updateButtons('waiting');
+    document.getElementById('statCurrent').textContent      = '-';
+    document.getElementById('leaderboardSection').style.display = 'none';
+    showToast('🔄 Spiel zurückgesetzt');
+  });
+
+  socket.on('quizNameUpdated', ({ quizName }) => {
+    document.getElementById('quizNameInput').value = quizName;
+    currentQuizName = quizName;
+    saveRoomToStorage(roomCode, quizName);
+  });
+
+  // ── Init ──────────────────────────────────────────────────────────────────────
   renderSavedRooms();
 </script>
 </body>

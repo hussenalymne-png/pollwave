@@ -3,1059 +3,804 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PollWave Präsentation</title>
+  <title>PollWave – Präsentation</title>
   <script src="/socket.io/socket.io.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #0a0a1a;
+      background: #0f0f1a;
       color: #fff;
-      min-height: 100vh;
+      height: 100vh;
       overflow: hidden;
-    }
-
-    /* ── Particles ── */
-    #particles {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
-      overflow: hidden;
-    }
-    .particle {
-      position: absolute;
-      border-radius: 50%;
-      opacity: 0.15;
-      animation: floatUp linear infinite;
-    }
-    @keyframes floatUp {
-      0%   { transform: translateY(100vh) scale(0); opacity: 0; }
-      10%  { opacity: 0.15; }
-      90%  { opacity: 0.15; }
-      100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+      display: flex;
+      flex-direction: column;
     }
 
     /* ── Header ── */
-    .header {
-      position: relative;
-      z-index: 10;
-      background: linear-gradient(135deg, rgba(26,26,46,0.95), rgba(22,33,62,0.95));
-      backdrop-filter: blur(20px);
-      padding: 12px 32px;
+    .pres-header {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      padding: 10px 28px;
       display: flex;
       align-items: center;
       gap: 16px;
       border-bottom: 2px solid #FF6600;
-      box-shadow: 0 2px 30px rgba(255,102,0,0.4);
+      flex-shrink: 0;
+      height: 56px;
     }
-    .header img { height: 36px; }
-    .header-title {
-      font-size: 20px;
+    .pres-header img   { height: 30px; }
+    .pres-header h1    {
+      font-size: 18px;
       font-weight: 800;
       background: linear-gradient(135deg, #FF6600, #4ECDC4);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    .header-room {
+    .pres-room-code    {
       margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .room-code-badge {
-      background: rgba(255,102,0,0.2);
-      border: 1px solid #FF6600;
-      color: #FF6600;
-      padding: 6px 16px;
-      border-radius: 20px;
-      font-size: 18px;
+      font-size: 22px;
       font-weight: 900;
+      color: #FF6600;
       letter-spacing: 3px;
     }
-    .player-count-badge {
-      background: rgba(78,205,196,0.2);
-      border: 1px solid #4ECDC4;
-      color: #4ECDC4;
-      padding: 6px 14px;
-      border-radius: 20px;
+    .pres-player-count {
       font-size: 14px;
-      font-weight: 700;
+      color: #aaa;
+      background: rgba(255,255,255,0.07);
+      padding: 4px 12px;
+      border-radius: 20px;
     }
 
-    /* ── Next Question Button (Presenter only) ── */
-    #btnNextQuestion {
-      display: none;
-      padding: 8px 20px;
-      background: linear-gradient(135deg, #FF6600, #e55a00);
-      border: none;
-      border-radius: 20px;
-      color: #fff;
-      font-size: 14px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: all 0.2s;
-      box-shadow: 0 4px 15px rgba(255,102,0,0.5);
-      letter-spacing: 0.5px;
-    }
-    #btnNextQuestion:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(255,102,0,0.7);
-    }
-    #btnNextQuestion.visible { display: block; }
-
-    /* ── Screens ── */
-    .screen {
-      position: relative;
-      z-index: 5;
-      display: none;
-      height: calc(100vh - 66px);
-      padding: 32px;
+    /* ── Main area ── */
+    .pres-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
       overflow: hidden;
+      position: relative;
     }
-    .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
     /* ── Waiting Screen ── */
-    #waitingScreen .quiz-name {
+    #waitingScreen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 40px;
+    }
+    .waiting-title {
       font-size: 52px;
       font-weight: 900;
-      text-align: center;
       background: linear-gradient(135deg, #FF6600, #4ECDC4);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      margin-bottom: 16px;
-      animation: pulse 2s ease-in-out infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50%       { opacity: 0.85; transform: scale(1.02); }
-    }
-    #waitingScreen .join-info {
-      font-size: 22px;
-      color: #aaa;
-      text-align: center;
-      margin-bottom: 40px;
-    }
-    #waitingScreen .join-url {
-      font-size: 28px;
-      font-weight: 800;
-      color: #4ECDC4;
-      background: rgba(78,205,196,0.1);
-      border: 2px solid rgba(78,205,196,0.4);
-      border-radius: 20px;
-      padding: 16px 40px;
-      text-align: center;
-      margin-bottom: 32px;
-    }
-    .qr-container {
-      background: #fff;
-      padding: 16px;
-      border-radius: 20px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-      margin-bottom: 32px;
-    }
-    .qr-container img { display: block; }
-    .waiting-players {
-      font-size: 20px;
-      color: #aaa;
       text-align: center;
     }
-    .waiting-players span {
-      color: #FF6600;
+    .waiting-sub  { font-size: 20px; color: #aaa; text-align: center; }
+    .waiting-code {
+      font-size: 80px;
       font-weight: 900;
-      font-size: 28px;
+      color: #FF6600;
+      letter-spacing: 10px;
+      text-shadow: 0 0 40px rgba(255,102,0,0.5);
+    }
+    .waiting-qr img { border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+    .waiting-url  { color: #aaa; font-size: 16px; margin-top: 8px; text-align: center; }
+    .waiting-players {
+      font-size: 22px;
+      color: #4ECDC4;
+      font-weight: 700;
     }
 
     /* ── Question Screen ── */
     #questionScreen {
-      padding: 20px 32px;
-      gap: 0;
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
     }
 
-    .question-meta-bar {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
+    /* Progress bar */
+    .progress-bar-wrap {
+      height: 6px;
+      background: rgba(255,255,255,0.1);
       flex-shrink: 0;
     }
-    .q-index-badge {
-      background: rgba(255,102,0,0.2);
-      border: 1px solid rgba(255,102,0,0.5);
-      color: #FF6600;
-      padding: 6px 18px;
-      border-radius: 20px;
-      font-weight: 800;
-      font-size: 15px;
-    }
-    .q-answers-badge {
-      background: rgba(78,205,196,0.15);
-      border: 1px solid rgba(78,205,196,0.4);
-      color: #4ECDC4;
-      padding: 6px 18px;
-      border-radius: 20px;
-      font-weight: 700;
-      font-size: 15px;
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #FF6600, #4ECDC4);
+      transition: width 1s linear;
     }
 
-    /* SVG Countdown */
-    .countdown-wrap {
-      position: relative;
-      width: 80px;
-      height: 80px;
-      flex-shrink: 0;
-    }
-    .countdown-wrap svg {
-      transform: rotate(-90deg);
-      width: 80px; height: 80px;
-    }
-    .countdown-track {
-      fill: none;
-      stroke: rgba(255,255,255,0.1);
-      stroke-width: 6;
-    }
-    .countdown-arc {
-      fill: none;
-      stroke: #FF6600;
-      stroke-width: 6;
-      stroke-linecap: round;
-      transition: stroke-dashoffset 1s linear, stroke 0.3s;
-    }
-    .countdown-num {
-      position: absolute;
-      inset: 0;
+    /* Question layout */
+    .q-layout {
+      flex: 1;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
-      font-weight: 900;
-      color: #FF6600;
+      overflow: hidden;
     }
 
-    /* Question content area */
-    .question-content {
-      width: 100%;
+    /* Content area (question + answers) */
+    .q-content {
       flex: 1;
       display: flex;
       flex-direction: column;
-      min-height: 0;
-    }
-
-    /* Layout: no image */
-    .layout-no-image {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
-
-    /* Layout: with image */
-    .layout-with-image {
-      display: flex;
-      height: 100%;
-      gap: 24px;
-    }
-    .layout-image-top    { flex-direction: column; }
-    .layout-image-bottom { flex-direction: column-reverse; }
-    .layout-image-left   { flex-direction: row; }
-    .layout-image-right  { flex-direction: row-reverse; }
-    .layout-image-background { flex-direction: column; position: relative; }
-
-    /* Question text box */
-    .question-text-box {
-      background: rgba(255,255,255,0.07);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 20px;
-      padding: 24px 36px;
-      text-align: center;
-      flex-shrink: 0;
-    }
-    .question-text {
-      font-size: clamp(22px, 3vw, 38px);
-      font-weight: 800;
-      line-height: 1.3;
-      color: #fff;
+      padding: 24px 32px;
+      overflow: hidden;
     }
 
     /* Image panel */
-    .image-panel {
-      border-radius: 16px;
-      overflow: hidden;
+    .q-image-panel {
+      display: none;
       flex-shrink: 0;
-      position: relative;
+      overflow: hidden;
     }
-    /* Size classes */
-    .img-size-small  { flex-basis: 30%; max-width: 30%; }
-    .img-size-medium { flex-basis: 45%; max-width: 45%; }
-    .img-size-large  { flex-basis: 60%; max-width: 60%; }
-    .img-size-full   { flex-basis: 100%; max-width: 100%; height: 45%; }
+    .q-image-panel.pos-left  { order: -1; width: 35%; }
+    .q-image-panel.pos-right { order: 1;  width: 35%; }
+    .q-image-panel.pos-left.size-small,
+    .q-image-panel.pos-right.size-small  { width: 22%; }
+    .q-image-panel.pos-left.size-large,
+    .q-image-panel.pos-right.size-large  { width: 45%; }
+    .q-image-panel.pos-left.size-full,
+    .q-image-panel.pos-right.size-full   { width: 55%; }
 
-    /* For top/bottom layouts, use height instead */
-    .layout-image-top    .img-size-small,
-    .layout-image-bottom .img-size-small  { flex-basis: auto; max-width: 100%; height: 25%; }
-    .layout-image-top    .img-size-medium,
-    .layout-image-bottom .img-size-medium { flex-basis: auto; max-width: 100%; height: 35%; }
-    .layout-image-top    .img-size-large,
-    .layout-image-bottom .img-size-large  { flex-basis: auto; max-width: 100%; height: 50%; }
-    .layout-image-top    .img-size-full,
-    .layout-image-bottom .img-size-full   { flex-basis: auto; max-width: 100%; height: 55%; }
-
-    /* Background layout */
-    .layout-image-background .image-panel {
-      position: absolute;
-      inset: 0;
-      z-index: 0;
-      border-radius: 0;
-      max-width: 100%;
-      flex-basis: auto;
+    .q-image-panel img {
+      width: 100%;
       height: 100%;
     }
-    .layout-image-background .question-text-box,
-    .layout-image-background .options-area {
+    .q-image-panel.fit-cover   img { object-fit: cover; }
+    .q-image-panel.fit-contain img { object-fit: contain; }
+    .q-image-panel.fit-fill    img { object-fit: fill; }
+
+    /* Top/Bottom image */
+    .q-image-top, .q-image-bottom {
+      display: none;
+      width: 100%;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .q-image-top    { height: 30%; }
+    .q-image-bottom { height: 30%; }
+    .q-image-top.size-small,
+    .q-image-bottom.size-small  { height: 20%; }
+    .q-image-top.size-large,
+    .q-image-bottom.size-large  { height: 40%; }
+    .q-image-top img, .q-image-bottom img { width: 100%; height: 100%; }
+    .q-image-top.fit-cover img,
+    .q-image-bottom.fit-cover img   { object-fit: cover; }
+    .q-image-top.fit-contain img,
+    .q-image-bottom.fit-contain img { object-fit: contain; }
+    .q-image-top.fit-fill img,
+    .q-image-bottom.fit-fill img    { object-fit: fill; }
+
+    /* Background image */
+    .q-bg-image {
+      position: absolute;
+      inset: 56px 0 0 0;
+      z-index: 0;
+      opacity: 0.15;
+    }
+    .q-bg-image img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* Question text */
+    .q-text-area { position: relative; z-index: 1; }
+    .q-index     { font-size: 14px; color: #aaa; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+    .q-text      {
+      font-size: clamp(22px, 3.5vw, 42px);
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 20px;
+    }
+
+    /* Timer */
+    .q-timer-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-shrink: 0;
       position: relative;
       z-index: 1;
     }
-    .layout-image-background .image-panel img {
-      width: 100%;
-      height: 100%;
-    }
+    .q-timer-svg  { flex-shrink: 0; }
+    .q-timer-text { font-size: 28px; font-weight: 900; color: #FF6600; }
+    .q-timer-sub  { font-size: 13px; color: #aaa; }
 
-    .image-panel img {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-    /* object-fit classes */
-    .img-fit-cover   img { object-fit: cover; }
-    .img-fit-contain img { object-fit: contain; background: rgba(0,0,0,0.3); }
-    .img-fit-fill    img { object-fit: fill; }
-
-    /* Options area */
-    .options-area {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      min-height: 0;
-      padding-top: 12px;
-    }
-    .options-grid-present {
+    /* Answer options */
+    .q-options {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
+      flex: 1;
+      position: relative;
+      z-index: 1;
     }
-
-    .option-bar {
+    .q-option {
       border-radius: 16px;
-      padding: 0;
-      overflow: hidden;
-      position: relative;
-      min-height: 70px;
-      cursor: default;
-      transition: transform 0.2s;
-    }
-    .option-bar:hover { transform: scale(1.01); }
-
-    .option-bg {
-      position: absolute;
-      inset: 0;
-      opacity: 0.85;
-    }
-    .option-fill {
-      position: absolute;
-      top: 0; left: 0; bottom: 0;
-      width: 0%;
-      background: rgba(255,255,255,0.2);
-      transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
-    }
-    .option-inner {
-      position: relative;
-      z-index: 2;
+      padding: 16px 20px;
       display: flex;
       align-items: center;
-      gap: 14px;
-      padding: 14px 20px;
-      height: 100%;
+      gap: 12px;
+      font-size: clamp(14px, 2vw, 20px);
+      font-weight: 700;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s;
     }
-    .option-letter {
+    .q-option-letter {
       width: 36px; height: 36px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.25);
+      background: rgba(0,0,0,0.25);
       display: flex; align-items: center; justify-content: center;
-      font-weight: 900;
-      font-size: 16px;
-      flex-shrink: 0;
+      font-size: 16px; font-weight: 900; flex-shrink: 0;
     }
-    .option-text {
-      flex: 1;
-      font-size: clamp(14px, 1.8vw, 20px);
-      font-weight: 700;
-      line-height: 1.3;
+    .q-option-text  { flex: 1; }
+    .q-option-bar   {
+      position: absolute;
+      bottom: 0; left: 0;
+      height: 5px;
+      background: rgba(255,255,255,0.4);
+      transition: width 0.5s ease;
     }
-    .option-count {
+    .q-option-count {
       font-size: 22px;
       font-weight: 900;
+      color: rgba(255,255,255,0.9);
       flex-shrink: 0;
-      min-width: 40px;
-      text-align: right;
     }
-    .option-bar.correct .option-bg {
-      box-shadow: inset 0 0 0 3px rgba(255,255,255,0.6);
-    }
-    .option-bar.correct::after {
-      content: '✓';
-      position: absolute;
-      top: 8px; right: 12px;
-      font-size: 20px;
-      z-index: 3;
-    }
-    .option-bar.wrong { opacity: 0.45; }
+    .opt-0 { background: linear-gradient(135deg, #c0392b, #e74c3c); }
+    .opt-1 { background: linear-gradient(135deg, #1a5276, #2980b9); }
+    .opt-2 { background: linear-gradient(135deg, #7d6608, #f1c40f); color: #1a1a2e; }
+    .opt-3 { background: linear-gradient(135deg, #1e8449, #2ecc71); }
 
-    /* ── Question End / Leaderboard overlay ── */
-    #questionEndOverlay {
-      position: fixed;
+    /* Correct answer highlight */
+    .q-option.correct   { outline: 4px solid #fff; transform: scale(1.03); box-shadow: 0 0 30px rgba(255,255,255,0.3); }
+    .q-option.incorrect { opacity: 0.35; }
+
+    /* ── Results / Leaderboard overlay ── */
+    .overlay {
+      position: absolute;
       inset: 0;
-      z-index: 50;
-      background: rgba(10,10,26,0.95);
-      backdrop-filter: blur(20px);
-      display: none;
+      z-index: 10;
+      display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       padding: 32px;
+      background: rgba(15,15,26,0.92);
+      backdrop-filter: blur(10px);
     }
-    #questionEndOverlay.active { display: flex; }
-    .end-title {
-      font-size: clamp(24px, 4vw, 48px);
+    .overlay.hidden { display: none; }
+
+    .overlay-title {
+      font-size: 36px;
       font-weight: 900;
-      margin-bottom: 32px;
-      text-align: center;
       background: linear-gradient(135deg, #FF6600, #4ECDC4);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      margin-bottom: 24px;
     }
-    .mini-leaderboard {
-      width: 100%;
-      max-width: 700px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .lb-row {
+
+    /* Mini leaderboard */
+    .mini-lb { width: 100%; max-width: 700px; }
+    .mini-lb-item {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
+      padding: 12px 20px;
       background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 16px;
-      padding: 14px 20px;
-      animation: slideIn 0.4s ease both;
+      border-radius: 14px;
+      margin-bottom: 10px;
+      font-size: 18px;
     }
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateX(-30px); }
-      to   { opacity: 1; transform: translateX(0); }
-    }
-    .lb-rank-icon { font-size: 28px; width: 36px; text-align: center; }
-    .lb-name { flex: 1; font-size: 20px; font-weight: 700; }
-    .lb-pts  { font-size: 22px; font-weight: 900; color: #FF6600; }
-    .lb-delta { font-size: 14px; color: #4ECDC4; font-weight: 700; min-width: 60px; text-align: right; }
+    .mini-lb-rank  { font-size: 26px; width: 40px; text-align: center; }
+    .mini-lb-name  { flex: 1; font-weight: 700; }
+    .mini-lb-score { color: #FF6600; font-weight: 900; font-size: 22px; }
 
-    /* ── Podium / Game Finished ── */
+    /* ── Podium (game finished) ── */
     #podiumScreen {
-      position: fixed;
-      inset: 0;
-      z-index: 100;
-      background: radial-gradient(ellipse at center, #1a0a2e 0%, #0a0a1a 100%);
       display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 20;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      background: linear-gradient(180deg, #0f0f1a 0%, #1a0f2e 100%);
       padding: 32px;
-      overflow: hidden;
     }
-    #podiumScreen.active { display: flex; }
-
-    .confetti-wrap {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      overflow: hidden;
-    }
-    .confetti-piece {
-      position: absolute;
-      width: 10px;
-      height: 10px;
-      top: -10px;
-      animation: confettiFall linear infinite;
-      border-radius: 2px;
-    }
-    @keyframes confettiFall {
-      0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
-      100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
-    }
-
     .podium-title {
-      font-size: clamp(32px, 5vw, 64px);
+      font-size: 52px;
       font-weight: 900;
-      text-align: center;
-      background: linear-gradient(135deg, #FFD700, #FF6600, #4ECDC4);
+      background: linear-gradient(135deg, #FFD700, #FF6600);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      margin-bottom: 48px;
-      position: relative;
-      z-index: 5;
-      animation: titlePop 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+      margin-bottom: 32px;
+      text-align: center;
     }
-    @keyframes titlePop {
-      from { transform: scale(0.5); opacity: 0; }
-      to   { transform: scale(1); opacity: 1; }
-    }
-
-    .podium-stage {
+    .podium-row {
       display: flex;
       align-items: flex-end;
       justify-content: center;
       gap: 16px;
-      position: relative;
-      z-index: 5;
       margin-bottom: 40px;
     }
-    .podium-place {
+    .podium-block {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
     .podium-avatar {
       width: 80px; height: 80px;
       border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 32px;
-      font-weight: 900;
-      border: 3px solid rgba(255,255,255,0.3);
-      animation: avatarBounce 0.8s cubic-bezier(0.34,1.56,0.64,1) both;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px;
+      border: 4px solid rgba(255,255,255,0.2);
     }
-    @keyframes avatarBounce {
-      from { transform: scale(0) translateY(30px); opacity: 0; }
-      to   { transform: scale(1) translateY(0); opacity: 1; }
+    .podium-name  { font-size: 16px; font-weight: 700; text-align: center; max-width: 120px; }
+    .podium-score { font-size: 20px; font-weight: 900; color: #FF6600; }
+    .podium-stand {
+      width: 120px;
+      border-radius: 12px 12px 4px 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 40px; font-weight: 900;
     }
-    .podium-player-name {
+    .podium-stand.p1 { height: 130px; background: linear-gradient(180deg, #FFD700, #FFA500); }
+    .podium-stand.p2 { height: 100px; background: linear-gradient(180deg, #C0C0C0, #909090); }
+    .podium-stand.p3 { height:  75px; background: linear-gradient(180deg, #CD7F32, #8B5E2F); }
+
+    .full-lb { width: 100%; max-width: 600px; }
+    .full-lb-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 18px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px; margin-bottom: 8px;
+    }
+    .full-lb-rank  { width: 28px; color: #aaa; font-weight: 700; text-align: center; }
+    .full-lb-name  { flex: 1; font-weight: 600; }
+    .full-lb-score { color: #FF6600; font-weight: 800; }
+
+    /* ── Next button ── */
+    .btn-next-q {
+      position: absolute;
+      bottom: 24px; right: 24px;
+      z-index: 30;
+      padding: 14px 28px;
+      background: linear-gradient(135deg, #FF6600, #e55a00);
+      border: none;
+      border-radius: 14px;
+      color: #fff;
       font-size: 16px;
       font-weight: 800;
-      text-align: center;
-      max-width: 140px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      cursor: pointer;
+      box-shadow: 0 6px 25px rgba(255,102,0,0.5);
+      transition: all 0.2s;
     }
-    .podium-player-score {
-      font-size: 20px;
-      font-weight: 900;
-      color: #FF6600;
-    }
-    .podium-block {
-      border-radius: 12px 12px 0 0;
-      width: 140px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 48px;
-      animation: blockRise 0.8s cubic-bezier(0.34,1.56,0.64,1) both;
-    }
-    @keyframes blockRise {
-      from { transform: scaleY(0); transform-origin: bottom; opacity: 0; }
-      to   { transform: scaleY(1); transform-origin: bottom; opacity: 1; }
-    }
-    .place-1 .podium-avatar {
-      background: linear-gradient(135deg, #FFD700, #FFA500);
-      box-shadow: 0 0 30px rgba(255,215,0,0.6);
-      width: 100px; height: 100px;
-      font-size: 40px;
-      animation-delay: 0.2s;
-    }
-    .place-2 .podium-avatar {
-      background: linear-gradient(135deg, #C0C0C0, #A8A8A8);
-      box-shadow: 0 0 20px rgba(192,192,192,0.5);
-      animation-delay: 0.1s;
-    }
-    .place-3 .podium-avatar {
-      background: linear-gradient(135deg, #CD7F32, #A0522D);
-      box-shadow: 0 0 20px rgba(205,127,50,0.5);
-    }
-    .place-1 .podium-block {
-      background: linear-gradient(180deg, rgba(255,215,0,0.3), rgba(255,165,0,0.2));
-      border: 2px solid rgba(255,215,0,0.5);
-      height: 160px;
-      animation-delay: 0.4s;
-    }
-    .place-2 .podium-block {
-      background: linear-gradient(180deg, rgba(192,192,192,0.3), rgba(168,168,168,0.2));
-      border: 2px solid rgba(192,192,192,0.5);
-      height: 120px;
-      animation-delay: 0.3s;
-    }
-    .place-3 .podium-block {
-      background: linear-gradient(180deg, rgba(205,127,50,0.3), rgba(160,82,45,0.2));
-      border: 2px solid rgba(205,127,50,0.5);
-      height: 90px;
-      animation-delay: 0.2s;
-    }
+    .btn-next-q:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(255,102,0,0.6); }
 
-    /* Full results list below podium */
-    .full-results {
-      width: 100%;
-      max-width: 600px;
-      position: relative;
-      z-index: 5;
-      max-height: 200px;
-      overflow-y: auto;
+    /* ── Confetti ── */
+    .confetti-piece {
+      position: fixed;
+      width: 10px; height: 14px;
+      border-radius: 3px;
+      top: -20px;
+      animation: confettiFall linear forwards;
+      z-index: 50;
+      pointer-events: none;
     }
-    .result-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 16px;
-      background: rgba(255,255,255,0.05);
-      border-radius: 10px;
-      margin-bottom: 6px;
-      animation: slideIn 0.4s ease both;
-    }
-    .result-rank { width: 28px; font-size: 14px; color: #aaa; text-align: center; font-weight: 700; }
-    .result-name { flex: 1; font-weight: 600; font-size: 15px; }
-    .result-score { font-weight: 900; color: #FF6600; font-size: 16px; }
-
-    /* ── Responsive ── */
-    @media (max-width: 768px) {
-      .header { padding: 10px 16px; }
-      .screen { padding: 16px; }
-      .options-grid-present { grid-template-columns: 1fr; }
-      .podium-block { width: 100px; }
-      .place-1 .podium-block { height: 120px; }
-      .place-2 .podium-block { height: 90px; }
-      .place-3 .podium-block { height: 70px; }
+    @keyframes confettiFall {
+      to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
     }
   </style>
 </head>
 <body>
 
-<!-- Particles -->
-<div id="particles"></div>
-
 <!-- Header -->
-<div class="header">
+<div class="pres-header">
   <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Galaxus_logo.svg/1200px-Galaxus_logo.svg.png" alt="Galaxus" />
-  <div class="header-title" id="headerTitle">PollWave</div>
-  <div class="header-room">
-    <span class="player-count-badge" id="playerCountBadge">👥 0 Spieler</span>
-    <span class="room-code-badge" id="roomCodeBadge">------</span>
-    <button id="btnNextQuestion" onclick="presenterNextQuestion()">⏭ Nächste Frage</button>
-  </div>
+  <h1 id="presQuizName">PollWave</h1>
+  <span class="pres-player-count" id="presPlayerCount">0 Spieler</span>
+  <span class="pres-room-code"    id="presRoomCode"></span>
 </div>
 
-<!-- WAITING SCREEN -->
-<div class="screen active" id="waitingScreen">
-  <div class="quiz-name" id="waitingQuizName">PollWave Quiz</div>
-  <div class="join-info">Scanne den QR-Code oder gib den Code ein</div>
-  <div class="qr-container">
-    <img id="waitingQR" src="" alt="QR Code" width="220" height="220" />
-  </div>
-  <div class="join-url" id="waitingUrl">pollwave.onrender.com</div>
-  <div class="waiting-players">
-    <span id="waitingPlayerCount">0</span> Spieler bereit
-  </div>
-</div>
+<!-- Main -->
+<div class="pres-main" id="presMain">
 
-<!-- QUESTION SCREEN -->
-<div class="screen" id="questionScreen">
-  <div class="question-meta-bar">
-    <div class="q-index-badge" id="qIndexBadge">Frage 1/1</div>
-    <div class="countdown-wrap">
-      <svg viewBox="0 0 80 80">
-        <circle class="countdown-track" cx="40" cy="40" r="34"/>
-        <circle class="countdown-arc"  cx="40" cy="40" r="34" id="countdownArc"
-          stroke-dasharray="213.6" stroke-dashoffset="0"/>
-      </svg>
-      <div class="countdown-num" id="countdownNum">30</div>
+  <!-- Waiting -->
+  <div id="waitingScreen">
+    <div class="waiting-title" id="waitingTitle">PollWave Quiz</div>
+    <div class="waiting-sub">Scanne den QR-Code oder gib den Code ein</div>
+    <div class="waiting-code" id="waitingCode">------</div>
+    <div class="waiting-qr" id="waitingQR"></div>
+    <div class="waiting-url" id="waitingUrl"></div>
+    <div class="waiting-players" id="waitingPlayers">0 Spieler bereit</div>
+  </div>
+
+  <!-- Question -->
+  <div id="questionScreen">
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressBar" style="width:100%"></div>
     </div>
-    <div class="q-answers-badge" id="qAnswersBadge">0 / 0 Antworten</div>
-  </div>
-  <div class="question-content" id="questionContent">
-    <!-- Built dynamically -->
-  </div>
-</div>
 
-<!-- QUESTION END OVERLAY -->
-<div id="questionEndOverlay">
-  <div class="end-title">📊 Zwischenwertung</div>
-  <div class="mini-leaderboard" id="miniLeaderboard"></div>
-</div>
+    <!-- Top image slot -->
+    <div class="q-image-top" id="qImageTop">
+      <img id="qImageTopImg" src="" alt="" />
+    </div>
 
-<!-- PODIUM SCREEN -->
-<div id="podiumScreen">
-  <div class="confetti-wrap" id="confettiWrap"></div>
-  <div class="podium-title">🏆 Endergebnis</div>
-  <div class="podium-stage" id="podiumStage"></div>
-  <div class="full-results" id="fullResults"></div>
+    <div class="q-layout" id="qLayout">
+      <!-- Left image slot -->
+      <div class="q-image-panel" id="qImageLeft">
+        <img id="qImageLeftImg" src="" alt="" />
+      </div>
+
+      <!-- Background image -->
+      <div class="q-bg-image" id="qBgImage" style="display:none">
+        <img id="qBgImageImg" src="" alt="" />
+      </div>
+
+      <div class="q-content">
+        <div class="q-text-area">
+          <div class="q-index"   id="qIndex">Frage 1/1</div>
+          <div class="q-text"    id="qText">Frage…</div>
+        </div>
+
+        <div class="q-timer-wrap">
+          <svg class="q-timer-svg" width="56" height="56" viewBox="0 0 56 56">
+            <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="5"/>
+            <circle id="timerCircle" cx="28" cy="28" r="24" fill="none"
+              stroke="#FF6600" stroke-width="5"
+              stroke-linecap="round"
+              stroke-dasharray="150.8"
+              stroke-dashoffset="0"
+              transform="rotate(-90 28 28)" />
+          </svg>
+          <div>
+            <div class="q-timer-text" id="timerText">30</div>
+            <div class="q-timer-sub">Sekunden</div>
+          </div>
+        </div>
+
+        <div class="q-options" id="qOptions"></div>
+      </div>
+
+      <!-- Right image slot -->
+      <div class="q-image-panel" id="qImageRight">
+        <img id="qImageRightImg" src="" alt="" />
+      </div>
+    </div>
+
+    <!-- Bottom image slot -->
+    <div class="q-image-bottom" id="qImageBottom">
+      <img id="qImageBottomImg" src="" alt="" />
+    </div>
+
+    <!-- Leaderboard overlay (shown after each question) -->
+    <div class="overlay hidden" id="lbOverlay">
+      <div class="overlay-title">📊 Zwischenstand</div>
+      <div class="mini-lb" id="miniLb"></div>
+    </div>
+  </div>
+
+  <!-- Podium -->
+  <div id="podiumScreen">
+    <div class="podium-title">🏆 Endresultat</div>
+    <div class="podium-row"   id="podiumRow"></div>
+    <div class="full-lb"      id="fullLb"></div>
+  </div>
+
+  <!-- Next Question button (visible to presenter) -->
+  <button class="btn-next-q" id="btnNextQ" style="display:none" onclick="presenterNext()">
+    ⏭ Nächste Frage
+  </button>
 </div>
 
 <script>
   const socket = io();
-  const params = new URLSearchParams(window.location.search);
-  const roomCode = (params.get('room') || '').toUpperCase();
+  const params  = new URLSearchParams(window.location.search);
+  const ROOM    = (params.get('room') || '').toUpperCase();
 
-  let maxTime = 30;
-  let totalAnswers = 0;
-  let totalPlayers = 0;
-  let currentAnswerCounts = [];
-  let currentOptions = [];
-  let isPresenter = false;
-  let questionActive = false;
+  let maxTime     = 30;
+  let currentTime = 30;
+  let totalQ      = 1;
+  let answerCounts = [];
 
-  const OPTION_COLORS = ['#e74c3c','#3498db','#f1c40f','#2ecc71'];
-  const OPTION_LETTERS = ['A','B','C','D'];
-  const CIRCUMFERENCE = 213.6; // 2 * π * 34
+  // ── Init ────────────────────────────────────────────────────────────────────
+  if (!ROOM) {
+    document.getElementById('waitingTitle').textContent = '⚠ Kein Raum angegeben';
+  } else {
+    document.getElementById('presRoomCode').textContent  = ROOM;
+    document.getElementById('waitingCode').textContent   = ROOM;
+    const url = `${window.location.origin}?code=${ROOM}`;
+    document.getElementById('waitingUrl').textContent    = url;
+    document.getElementById('waitingQR').innerHTML =
+      `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}" />`;
 
-  // ── Init ──
-  function init() {
-    if (!roomCode) {
-      document.getElementById('waitingQuizName').textContent = '❌ Kein Raum angegeben';
-      return;
-    }
-    document.getElementById('roomCodeBadge').textContent = roomCode;
-
-    const joinUrl = `${window.location.origin}?code=${roomCode}`;
-    document.getElementById('waitingUrl').textContent = joinUrl;
-    document.getElementById('waitingQR').src =
-      `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(joinUrl)}`;
-
-    socket.emit('joinRoom', { code: roomCode, name: '__presenter__' });
-    spawnParticles();
+    socket.emit('joinRoom', { code: ROOM, name: '__presenter__' });
   }
 
-  // ── Presenter control ──
-  function presenterNextQuestion() {
-    if (!roomCode) return;
-    socket.emit('nextQuestion', { code: roomCode });
-  }
-
-  // ── Particles ──
-  function spawnParticles() {
-    const container = document.getElementById('particles');
-    const colors = ['#FF6600','#4ECDC4','#FFD700','#e74c3c','#9b59b6'];
-    for (let i = 0; i < 25; i++) {
-      const p = document.createElement('div');
-      p.className = 'particle';
-      const size = Math.random() * 8 + 4;
-      p.style.cssText = `
-        width:${size}px; height:${size}px;
-        left:${Math.random()*100}%;
-        background:${colors[Math.floor(Math.random()*colors.length)]};
-        animation-duration:${Math.random()*15+10}s;
-        animation-delay:-${Math.random()*15}s;
-      `;
-      container.appendChild(p);
-    }
-  }
-
-  // ── Screen Management ──
-  function showScreen(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    const el = document.getElementById(id);
-    if (el) el.classList.add('active');
-  }
-
-  // ── Build Question Layout ──
-  function buildQuestionLayout(data) {
-    const { question, options, image, imagePosition, imageSize, imageFit } = data;
-    const content = document.getElementById('questionContent');
-    content.innerHTML = '';
-
-    // Determine layout
-    const pos  = imagePosition || 'right';
-    const size = imageSize     || 'medium';
-    const fit  = imageFit      || 'cover';
-
-    const optionsHTML = buildOptionsHTML(options);
-
-    if (!image) {
-      // No image layout
-      content.innerHTML = `
-        <div class="layout-no-image">
-          <div class="question-text-box" style="margin-bottom:16px">
-            <div class="question-text">${escHtml(question)}</div>
-          </div>
-          <div class="options-area">
-            <div class="options-grid-present" id="optionsGrid">${optionsHTML}</div>
-          </div>
-        </div>`;
-    } else if (pos === 'background') {
-      // Background image
-      content.innerHTML = `
-        <div class="layout-with-image layout-image-background" style="height:100%">
-          <div class="image-panel img-fit-${fit}">
-            <img src="${image}" alt="" />
-            <div style="position:absolute;inset:0;background:rgba(0,0,0,0.55)"></div>
-          </div>
-          <div class="question-text-box" style="margin-bottom:16px">
-            <div class="question-text">${escHtml(question)}</div>
-          </div>
-          <div class="options-area">
-            <div class="options-grid-present" id="optionsGrid">${optionsHTML}</div>
-          </div>
-        </div>`;
-    } else {
-      // Directional layout
-      const layoutClass = `layout-image-${pos}`;
-      const isHorizontal = pos === 'left' || pos === 'right';
-
-      content.innerHTML = `
-        <div class="layout-with-image ${layoutClass}" style="height:100%">
-          <div class="image-panel img-size-${size} img-fit-${fit}">
-            <img src="${image}" alt="" />
-          </div>
-          <div style="flex:1; display:flex; flex-direction:column; min-width:0; min-height:0; gap:12px;">
-            <div class="question-text-box">
-              <div class="question-text">${escHtml(question)}</div>
-            </div>
-            <div class="options-area">
-              <div class="options-grid-present" id="optionsGrid">${optionsHTML}</div>
-            </div>
-          </div>
-        </div>`;
-    }
-  }
-
-  function buildOptionsHTML(options) {
-    return options.map((opt, i) => `
-      <div class="option-bar" id="optBar_${i}">
-        <div class="option-bg" style="background:${OPTION_COLORS[i]}"></div>
-        <div class="option-fill" id="optFill_${i}"></div>
-        <div class="option-inner">
-          <div class="option-letter">${OPTION_LETTERS[i]}</div>
-          <div class="option-text">${escHtml(opt)}</div>
-          <div class="option-count" id="optCount_${i}">0</div>
-        </div>
-      </div>`).join('');
-  }
-
+  // ── Helpers ─────────────────────────────────────────────────────────────────
   function escHtml(str) {
-    return String(str)
-      .replace(/&/g,'&amp;')
-      .replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;');
+    return String(str || '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  // ── Countdown ──
-  function updateCountdown(timeLeft, maxT) {
-    const arc = document.getElementById('countdownArc');
-    const num = document.getElementById('countdownNum');
-    if (!arc || !num) return;
-    const pct = timeLeft / maxT;
-    arc.style.strokeDashoffset = CIRCUMFERENCE * (1 - pct);
-    arc.style.stroke = pct > 0.5 ? '#FF6600' : pct > 0.25 ? '#f1c40f' : '#e74c3c';
-    num.style.color  = pct > 0.5 ? '#FF6600' : pct > 0.25 ? '#f1c40f' : '#e74c3c';
-    num.textContent  = timeLeft;
-  }
-
-  // ── Update Answer Bars ──
-  function updateAnswerBars(counts, total) {
-    const maxCount = Math.max(1, ...counts);
-    counts.forEach((c, i) => {
-      const fill  = document.getElementById(`optFill_${i}`);
-      const count = document.getElementById(`optCount_${i}`);
-      if (fill)  fill.style.width  = `${(c / maxCount) * 100}%`;
-      if (count) count.textContent = c;
-    });
-    document.getElementById('qAnswersBadge').textContent =
-      `${total} / ${totalPlayers} Antworten`;
-  }
-
-  // ── Reveal correct/wrong ──
-  function revealAnswers(correctIndex) {
-    currentOptions.forEach((_, i) => {
-      const bar = document.getElementById(`optBar_${i}`);
-      if (!bar) return;
-      if (i === correctIndex) bar.classList.add('correct');
-      else bar.classList.add('wrong');
+  function showScreen(id) {
+    ['waitingScreen','questionScreen','podiumScreen'].forEach(s => {
+      const el = document.getElementById(s);
+      if (el) el.style.display = s === id ? (id === 'questionScreen' ? 'flex' : (id === 'podiumScreen' ? 'flex' : 'flex')) : 'none';
     });
   }
 
-  // ── Mini Leaderboard (after each question) ──
-  function showQuestionEnd(stats, correctIndex) {
-    // First reveal answers on question screen
-    revealAnswers(correctIndex);
-    questionActive = false;
-    document.getElementById('btnNextQuestion').classList.toggle('visible', isPresenter);
-
-    setTimeout(() => {
-      const sorted = [...stats].sort((a, b) => b.score - a.score).slice(0, 5);
-      const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
-      document.getElementById('miniLeaderboard').innerHTML = sorted.map((p, i) => `
-        <div class="lb-row" style="animation-delay:${i * 0.1}s">
-          <div class="lb-rank-icon">${medals[i] || i+1}</div>
-          <div class="lb-name">${escHtml(p.name)}</div>
-          <div class="lb-pts">${p.score} Pts</div>
-        </div>`).join('');
-      document.getElementById('questionEndOverlay').classList.add('active');
-    }, 1500);
+  function setProgress(timeLeft, max) {
+    const pct = (timeLeft / max) * 100;
+    document.getElementById('progressBar').style.width = pct + '%';
+    // SVG circle
+    const circ = document.getElementById('timerCircle');
+    const circumference = 150.8;
+    circ.style.strokeDashoffset = circumference * (1 - timeLeft / max);
+    circ.style.stroke = timeLeft <= 5 ? '#e74c3c' : timeLeft <= 10 ? '#f1c40f' : '#FF6600';
   }
 
-  // ── Podium ──
-  function showPodium(players) {
-    document.getElementById('questionEndOverlay').classList.remove('active');
-
-    // Build podium (1st, 2nd, 3rd)
-    // Display order: 2nd, 1st, 3rd
-    const top3 = players.slice(0, 3);
-    const displayOrder = [];
-    if (top3[1]) displayOrder.push({ player: top3[1], place: 2, delay: '0.2s' });
-    if (top3[0]) displayOrder.push({ player: top3[0], place: 1, delay: '0.4s' });
-    if (top3[2]) displayOrder.push({ player: top3[2], place: 3, delay: '0.1s' });
-
-    const placeEmojis = { 1: '🥇', 2: '🥈', 3: '🥉' };
-    const placeInitials = (name) => name ? name.charAt(0).toUpperCase() : '?';
-
-    document.getElementById('podiumStage').innerHTML = displayOrder.map(({ player, place, delay }) => `
-      <div class="podium-place place-${place}" style="animation-delay:${delay}">
-        <div class="podium-avatar" style="animation-delay:${delay}">${placeInitials(player.name)}</div>
-        <div class="podium-player-name">${escHtml(player.name)}</div>
-        <div class="podium-player-score">${player.score} Pts</div>
-        <div class="podium-block" style="animation-delay:${delay}">${placeEmojis[place]}</div>
-      </div>`).join('');
-
-    // Full results list (4th and below)
-    const rest = players.slice(3);
-    document.getElementById('fullResults').innerHTML = rest.map((p, i) => `
-      <div class="result-row" style="animation-delay:${i * 0.08}s">
-        <div class="result-rank">${i + 4}</div>
-        <div class="result-name">${escHtml(p.name)}</div>
-        <div class="result-score">${p.score} Pts</div>
-      </div>`).join('');
-
-    // Show podium screen
-    document.getElementById('podiumScreen').classList.add('active');
-    document.getElementById('btnNextQuestion').classList.remove('visible');
-    spawnConfetti();
+  function resetImagePanels() {
+    ['qImageLeft','qImageRight','qImageTop','qImageBottom','qBgImage'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    ['qImageLeft','qImageRight'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.className = 'q-image-panel'; }
+    });
+    const bg = document.getElementById('qBgImage');
+    if (bg) bg.style.display = 'none';
   }
 
-  // ── Confetti ──
-  function spawnConfetti() {
-    const wrap = document.getElementById('confettiWrap');
-    const colors = ['#FF6600','#FFD700','#4ECDC4','#e74c3c','#9b59b6','#fff'];
-    wrap.innerHTML = '';
-    for (let i = 0; i < 80; i++) {
-      const c = document.createElement('div');
-      c.className = 'confetti-piece';
-      c.style.cssText = `
-        left:${Math.random()*100}%;
-        background:${colors[Math.floor(Math.random()*colors.length)]};
-        animation-duration:${Math.random()*3+2}s;
-        animation-delay:${Math.random()*3}s;
-        width:${Math.random()*10+5}px;
-        height:${Math.random()*10+5}px;
-        border-radius:${Math.random()>0.5?'50%':'2px'};
-      `;
-      wrap.appendChild(c);
+  function applyImage(image, position, size, fit) {
+    if (!image) return;
+
+    const sizeClass = 'size-' + (size || 'medium');
+    const fitClass  = 'fit-'  + (fit  || 'cover');
+
+    if (position === 'left' || position === 'right') {
+      const panelId = position === 'left' ? 'qImageLeft' : 'qImageRight';
+      const imgId   = position === 'left' ? 'qImageLeftImg' : 'qImageRightImg';
+      const panel   = document.getElementById(panelId);
+      const img     = document.getElementById(imgId);
+      panel.className = `q-image-panel pos-${position} ${sizeClass} ${fitClass}`;
+      panel.style.display = 'block';
+      img.src = image;
+
+    } else if (position === 'top') {
+      const panel = document.getElementById('qImageTop');
+      const img   = document.getElementById('qImageTopImg');
+      panel.className = `q-image-top ${sizeClass} ${fitClass}`;
+      panel.style.display = 'block';
+      img.src = image;
+
+    } else if (position === 'bottom') {
+      const panel = document.getElementById('qImageBottom');
+      const img   = document.getElementById('qImageBottomImg');
+      panel.className = `q-image-bottom ${sizeClass} ${fitClass}`;
+      panel.style.display = 'block';
+      img.src = image;
+
+    } else if (position === 'background') {
+      const panel = document.getElementById('qBgImage');
+      const img   = document.getElementById('qBgImageImg');
+      panel.style.display = 'block';
+      img.src = image;
     }
   }
 
-  // ── Socket Events ──
-  socket.on('joinedAsPresenter', ({ quizName, state, playerCount }) => {
-    isPresenter = true;
-    document.getElementById('waitingQuizName').textContent = quizName || 'PollWave Quiz';
-    document.getElementById('headerTitle').textContent = quizName || 'PollWave';
-    document.getElementById('waitingPlayerCount').textContent = playerCount || 0;
-    document.getElementById('playerCountBadge').textContent = `👥 ${playerCount || 0} Spieler`;
+  function renderOptions(options, counts, correctAnswer) {
+    const letters = ['A','B','C','D'];
+    const max     = Math.max(...(counts || [0]), 1);
+    const container = document.getElementById('qOptions');
+    container.innerHTML = options.map((opt, i) => {
+      const count = (counts && counts[i]) || 0;
+      const pct   = Math.round((count / max) * 100);
+      let cls = `q-option opt-${i}`;
+      if (correctAnswer !== undefined && correctAnswer !== null) {
+        cls += i === correctAnswer ? ' correct' : ' incorrect';
+      }
+      return `
+        <div class="${cls}">
+          <div class="q-option-letter">${letters[i]}</div>
+          <div class="q-option-text">${escHtml(opt)}</div>
+          ${counts ? `<div class="q-option-count">${count}</div>` : ''}
+          <div class="q-option-bar" style="width:${counts ? pct : 0}%"></div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Presenter Next ───────────────────────────────────────────────────────────
+  function presenterNext() {
+    socket.emit('adminNextQuestion', { code: ROOM, password: '' });
+    // Hide overlay immediately
+    document.getElementById('lbOverlay').classList.add('hidden');
+    document.getElementById('btnNextQ').style.display = 'none';
+  }
+
+  // ── Confetti ─────────────────────────────────────────────────────────────────
+  function launchConfetti() {
+    const colors = ['#FF6600','#4ECDC4','#FFD700','#e74c3c','#9b59b6','#2ecc71'];
+    for (let k = 0; k < 120; k++) {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.cssText = `
+        left: ${Math.random() * 100}vw;
+        background: ${colors[Math.floor(Math.random() * colors.length)]};
+        animation-duration: ${2 + Math.random() * 2}s;
+        animation-delay: ${Math.random() * 1.5}s;
+        transform: rotate(${Math.random() * 360}deg);
+        width: ${6 + Math.random() * 8}px;
+        height: ${10 + Math.random() * 10}px;
+      `;
+      document.body.appendChild(el);
+      el.addEventListener('animationend', () => el.remove());
+    }
+  }
+
+  // ── Socket Events ─────────────────────────────────────────────────────────────
+  socket.on('joinedRoom', ({ quizName, state, players }) => {
+    document.getElementById('waitingTitle').textContent   = quizName || 'PollWave Quiz';
+    document.getElementById('presQuizName').textContent   = quizName || 'PollWave';
+    document.getElementById('waitingPlayers').textContent = `${players} Spieler bereit`;
+    document.getElementById('presPlayerCount').textContent = `${players} Spieler`;
+
+    if (state === 'finished') {
+      // already done – nothing special
+    } else if (state === 'playing') {
+      showScreen('questionScreen');
+    } else {
+      showScreen('waitingScreen');
+    }
   });
 
   socket.on('playerJoined', ({ playerCount }) => {
-    document.getElementById('waitingPlayerCount').textContent = playerCount;
-    document.getElementById('playerCountBadge').textContent = `👥 ${playerCount} Spieler`;
+    document.getElementById('waitingPlayers').textContent  = `${playerCount} Spieler bereit`;
+    document.getElementById('presPlayerCount').textContent = `${playerCount} Spieler`;
   });
 
   socket.on('playerLeft', ({ playerCount }) => {
-    document.getElementById('playerCountBadge').textContent = `👥 ${playerCount} Spieler`;
+    document.getElementById('presPlayerCount').textContent = `${playerCount} Spieler`;
   });
 
   socket.on('quizNameUpdated', ({ quizName }) => {
-    document.getElementById('waitingQuizName').textContent = quizName;
-    document.getElementById('headerTitle').textContent = quizName;
+    document.getElementById('waitingTitle').textContent = quizName;
+    document.getElementById('presQuizName').textContent = quizName;
   });
 
   socket.on('gameStarted', ({ quizName }) => {
-    if (quizName) {
-      document.getElementById('headerTitle').textContent = quizName;
-    }
-    document.getElementById('questionEndOverlay').classList.remove('active');
-  });
-
-  socket.on('newQuestion', (data) => {
-    const { index, total, question, options, image, imagePosition, imageSize, imageFit, time } = data;
-
-    maxTime = time || 30;
-    currentOptions = options;
-    currentAnswerCounts = new Array(options.length).fill(0);
-    totalAnswers = 0;
-    questionActive = true;
-
-    // Hide overlays
-    document.getElementById('questionEndOverlay').classList.remove('active');
-    document.getElementById('podiumScreen').classList.remove('active');
-
-    // Update meta bar
-    document.getElementById('qIndexBadge').textContent = `Frage ${index + 1} / ${total}`;
-    document.getElementById('qAnswersBadge').textContent = `0 / ${totalPlayers} Antworten`;
-    updateCountdown(maxTime, maxTime);
-
-    // Build layout
-    buildQuestionLayout({ question, options, image, imagePosition, imageSize, imageFit });
-
-    // Show question screen
+    document.getElementById('presQuizName').textContent = quizName || 'PollWave';
+    document.getElementById('lbOverlay').classList.add('hidden');
     showScreen('questionScreen');
-
-    // Next button: show only when question is live + presenter
-    document.getElementById('btnNextQuestion').classList.toggle('visible', isPresenter);
   });
 
-  socket.on('timerUpdate', ({ timeLeft, maxTime: mt }) => {
-    maxTime = mt || maxTime;
-    updateCountdown(timeLeft, maxTime);
+  socket.on('newQuestion', ({ index, total, question, options, time, image, imagePosition, imageSize, imageFit }) => {
+    maxTime     = time || 30;
+    currentTime = maxTime;
+    totalQ      = total;
+    answerCounts = [];
+
+    document.getElementById('lbOverlay').classList.add('hidden');
+    document.getElementById('btnNextQ').style.display = 'none';
+
+    document.getElementById('qIndex').textContent = `Frage ${index + 1} / ${total}`;
+    document.getElementById('qText').textContent  = question;
+    document.getElementById('timerText').textContent = maxTime;
+
+    setProgress(maxTime, maxTime);
+    resetImagePanels();
+    applyImage(image, imagePosition, imageSize, imageFit);
+    renderOptions(options, null, null);
+
+    showScreen('questionScreen');
   });
 
-  socket.on('answerUpdate', ({ answerCounts, totalAnswers: ta, totalPlayers: tp }) => {
-    totalPlayers = tp;
-    totalAnswers = ta;
-    currentAnswerCounts = answerCounts;
-    updateAnswerBars(answerCounts, ta);
+  socket.on('timerUpdate', ({ timeLeft, maxTime: max }) => {
+    currentTime = timeLeft;
+    maxTime     = max;
+    document.getElementById('timerText').textContent = timeLeft;
+    setProgress(timeLeft, max);
   });
 
-  socket.on('questionEnd', ({ correctAnswer, stats, answerCounts }) => {
-    if (answerCounts) {
-      currentAnswerCounts = answerCounts;
-      updateAnswerBars(answerCounts, totalAnswers);
+  socket.on('answerUpdate', ({ answerCounts: counts }) => {
+    answerCounts = counts;
+    // Update count badges without re-rendering (just update counts)
+    const countEls = document.querySelectorAll('#qOptions .q-option-count');
+    const barEls   = document.querySelectorAll('#qOptions .q-option-bar');
+    const max      = Math.max(...counts, 1);
+    counts.forEach((c, i) => {
+      if (countEls[i]) countEls[i].textContent = c;
+      if (barEls[i])   barEls[i].style.width   = Math.round((c / max) * 100) + '%';
+    });
+  });
+
+  socket.on('questionEnd', ({ correctAnswer, answerCounts: counts, leaderboard }) => {
+    // Show correct answer
+    const opts = document.querySelectorAll('#qOptions .q-option');
+    opts.forEach((el, i) => {
+      el.classList.remove('correct','incorrect');
+      el.classList.add(i === correctAnswer ? 'correct' : 'incorrect');
+    });
+
+    // Update bars with final counts
+    if (counts) {
+      const countEls = document.querySelectorAll('#qOptions .q-option-count');
+      const barEls   = document.querySelectorAll('#qOptions .q-option-bar');
+      const max      = Math.max(...counts, 1);
+      counts.forEach((c, i) => {
+        if (countEls[i]) countEls[i].textContent = c;
+        if (barEls[i])   barEls[i].style.width   = Math.round((c / max) * 100) + '%';
+      });
     }
-    showQuestionEnd(stats, correctAnswer);
+
+    // Show mini leaderboard overlay
+    if (leaderboard?.length) {
+      const medals = ['🥇','🥈','🥉'];
+      document.getElementById('miniLb').innerHTML = leaderboard.slice(0, 5).map((p, i) => `
+        <div class="mini-lb-item">
+          <div class="mini-lb-rank">${medals[i] || i + 1}</div>
+          <div class="mini-lb-name">${escHtml(p.name)}</div>
+          <div class="mini-lb-score">${p.score} Pts</div>
+        </div>`).join('');
+      document.getElementById('lbOverlay').classList.remove('hidden');
+    }
+
+    // Show next button for presenter
+    document.getElementById('btnNextQ').style.display = 'block';
   });
 
-  socket.on('gameFinished', ({ players }) => {
-    showPodium(players);
+  socket.on('gameFinished', ({ leaderboard }) => {
+    launchConfetti();
+    showScreen('podiumScreen');
+    document.getElementById('btnNextQ').style.display = 'none';
+
+    const sorted = leaderboard || [];
+
+    // Podium (top 3)
+    const podiumData = [
+      { data: sorted[1], cls: 'p2', emoji: '🥈', rank: 2 },
+      { data: sorted[0], cls: 'p1', emoji: '🥇', rank: 1 },
+      { data: sorted[2], cls: 'p3', emoji: '🥉', rank: 3 }
+    ];
+
+    document.getElementById('podiumRow').innerHTML = podiumData.map(({ data, cls, emoji }) => {
+      if (!data) return '<div class="podium-block"></div>';
+      return `
+        <div class="podium-block">
+          <div class="podium-avatar" style="background:rgba(255,255,255,0.1)">${emoji}</div>
+          <div class="podium-name">${escHtml(data.name)}</div>
+          <div class="podium-score">${data.score} Pts</div>
+          <div class="podium-stand ${cls}">${emoji}</div>
+        </div>`;
+    }).join('');
+
+    // Full list (4th+)
+    document.getElementById('fullLb').innerHTML = sorted.slice(3).map((p, i) => `
+      <div class="full-lb-item">
+        <div class="full-lb-rank">${i + 4}</div>
+        <div class="full-lb-name">${escHtml(p.name)}</div>
+        <div class="full-lb-score">${p.score} Pts</div>
+      </div>`).join('');
+
+    document.getElementById('podiumScreen').style.display = 'flex';
   });
 
   socket.on('gameReset', () => {
-    document.getElementById('podiumScreen').classList.remove('active');
-    document.getElementById('questionEndOverlay').classList.remove('active');
-    document.getElementById('btnNextQuestion').classList.remove('visible');
-    questionActive = false;
+    document.getElementById('podiumScreen').style.display = 'none';
+    document.getElementById('lbOverlay').classList.add('hidden');
+    document.getElementById('btnNextQ').style.display = 'none';
     showScreen('waitingScreen');
   });
 
-  // ── Start ──
-  init();
+  socket.on('error', ({ message }) => {
+    console.warn('[SOCKET ERROR]', message);
+  });
 </script>
 </body>
 </html>
