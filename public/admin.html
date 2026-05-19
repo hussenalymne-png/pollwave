@@ -47,10 +47,12 @@
     /* ── Login ── */
     #loginScreen {
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       min-height: calc(100vh - 74px);
       padding: 20px;
+      gap: 20px;
     }
     .login-card {
       background: rgba(255,255,255,0.05);
@@ -139,6 +141,94 @@
     }
     .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(255,102,0,0.5); }
 
+    /* ── Gespeicherte Räume ── */
+    .saved-rooms-card {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(78,205,196,0.3);
+      border-radius: 24px;
+      padding: 28px 32px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .saved-rooms-card h3 {
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 16px;
+      color: #4ECDC4;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .saved-room-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      margin-bottom: 8px;
+      transition: all 0.2s;
+    }
+    .saved-room-item:hover {
+      border-color: rgba(255,102,0,0.4);
+      background: rgba(255,102,0,0.05);
+    }
+    .saved-room-code {
+      font-size: 18px;
+      font-weight: 900;
+      color: #FF6600;
+      letter-spacing: 2px;
+      width: 70px;
+      flex-shrink: 0;
+    }
+    .saved-room-name {
+      flex: 1;
+      font-size: 14px;
+      color: #ccc;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .saved-room-date {
+      font-size: 11px;
+      color: #666;
+      flex-shrink: 0;
+    }
+    .btn-open-room {
+      padding: 6px 14px;
+      background: linear-gradient(135deg, #FF6600, #e55a00);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .btn-open-room:hover { transform: translateY(-1px); }
+    .btn-delete-room {
+      padding: 6px 10px;
+      background: rgba(231,76,60,0.2);
+      border: 1px solid rgba(231,76,60,0.3);
+      border-radius: 8px;
+      color: #e74c3c;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .btn-delete-room:hover { background: rgba(231,76,60,0.3); }
+    .no-saved-rooms {
+      text-align: center;
+      color: #555;
+      font-size: 14px;
+      padding: 16px 0;
+    }
+
     /* ── Dashboard ── */
     #dashboard { display: none; padding: 24px 32px; max-width: 1200px; margin: 0 auto; }
 
@@ -225,6 +315,11 @@
     .btn-next  { background: linear-gradient(135deg, #FF6600, #e55a00); color: #fff; }
     .btn-end   { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; }
     .btn-reset { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+    .btn-present {
+      background: linear-gradient(135deg, #9b59b6, #8e44ad);
+      color: #fff;
+      margin-left: auto;
+    }
     .btn-control:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
     .btn-control:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
@@ -413,6 +508,7 @@
       .room-code-display { font-size: 36px; }
       .controls-row { flex-direction: column; }
       .btn-control { width: 100%; }
+      .btn-present { margin-left: 0; }
     }
   </style>
 </head>
@@ -459,6 +555,14 @@
       <button class="btn-primary" onclick="rejoinRoom()">🔄 Rejoinen</button>
     </div>
   </div>
+
+  <!-- GESPEICHERTE RÄUME -->
+  <div class="saved-rooms-card" id="savedRoomsCard">
+    <h3>💾 Gespeicherte Räume</h3>
+    <div id="savedRoomsList">
+      <div class="no-saved-rooms">Noch keine Räume gespeichert</div>
+    </div>
+  </div>
 </div>
 
 <!-- DASHBOARD -->
@@ -502,10 +606,11 @@
   </div>
 
   <div class="controls-row">
-    <button class="btn-control btn-start" id="btnStart" onclick="startGame()">▶ Start</button>
-    <button class="btn-control btn-next"  id="btnNext"  onclick="nextQuestion()" disabled>⏭ Nächste Frage</button>
-    <button class="btn-control btn-end"   id="btnEnd"   onclick="endGame()" disabled>⏹ Beenden</button>
-    <button class="btn-control btn-reset" id="btnReset" onclick="resetGame()">🔄 Reset</button>
+    <button class="btn-control btn-start"   id="btnStart"   onclick="startGame()">▶ Start</button>
+    <button class="btn-control btn-next"    id="btnNext"    onclick="nextQuestion()" disabled>⏭ Nächste Frage</button>
+    <button class="btn-control btn-end"     id="btnEnd"     onclick="endGame()" disabled>⏹ Beenden</button>
+    <button class="btn-control btn-reset"   id="btnReset"   onclick="resetGame()">🔄 Reset</button>
+    <button class="btn-control btn-present" id="btnPresent" onclick="openPresentation()">🖥️ Präsentation</button>
   </div>
 
   <div class="section-title">📝 Fragen</div>
@@ -527,8 +632,11 @@
   let adminPassword = '';
   let questions = [];
   let gameState = 'waiting';
+  let currentQuizName = 'PollWave Quiz';
 
   const OPTION_COLORS = ['#e74c3c','#3498db','#f1c40f','#2ecc71'];
+  const MAX_SAVED_ROOMS = 10;
+  const STORAGE_KEY = 'pollwave_saved_rooms';
 
   // ── Tabs ──
   function switchTab(tab) {
@@ -545,10 +653,71 @@
     setTimeout(() => t.classList.remove('show'), 3000);
   }
 
+  // ── Gespeicherte Räume ──
+  function getSavedRooms() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch { return []; }
+  }
+
+  function saveRoomToStorage(code, quizName) {
+    let rooms = getSavedRooms();
+    // Bestehenden Eintrag entfernen falls vorhanden
+    rooms = rooms.filter(r => r.code !== code);
+    // Neuen Eintrag vorne einfügen
+    rooms.unshift({
+      code,
+      quizName: quizName || 'PollWave Quiz',
+      date: new Date().toLocaleDateString('de-CH')
+    });
+    // Max 10 Räume
+    if (rooms.length > MAX_SAVED_ROOMS) rooms = rooms.slice(0, MAX_SAVED_ROOMS);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(rooms));
+    renderSavedRooms();
+  }
+
+  function deleteSavedRoom(code) {
+    let rooms = getSavedRooms().filter(r => r.code !== code);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(rooms));
+    renderSavedRooms();
+    showToast('🗑 Raum entfernt');
+  }
+
+  function renderSavedRooms() {
+    const rooms = getSavedRooms();
+    const list  = document.getElementById('savedRoomsList');
+    if (!rooms.length) {
+      list.innerHTML = '<div class="no-saved-rooms">Noch keine Räume gespeichert</div>';
+      return;
+    }
+    list.innerHTML = rooms.map(r => `
+      <div class="saved-room-item">
+        <div class="saved-room-code">${r.code}</div>
+        <div class="saved-room-name">${escHtml(r.quizName)}</div>
+        <div class="saved-room-date">${r.date}</div>
+        <button class="btn-open-room" onclick="quickRejoin('${r.code}')">▶ Öffnen</button>
+        <button class="btn-delete-room" onclick="deleteSavedRoom('${r.code}')">🗑</button>
+      </div>`).join('');
+  }
+
+  function quickRejoin(code) {
+    // Tab auf Rejoin wechseln und Code einfügen
+    switchTab('rejoin');
+    document.getElementById('rejoinCode').value = code;
+    document.getElementById('rejoinPassword').focus();
+    showToast('🔑 Passwort eingeben und Rejoinen');
+  }
+
+  // ── Präsentation öffnen ──
+  function openPresentation() {
+    if (!roomCode) return showToast('❌ Kein aktiver Raum');
+    const url = `${window.location.origin}/present.html?room=${roomCode}`;
+    window.open(url, '_blank');
+  }
+
   // ── Create / Rejoin ──
   async function createRoom() {
-    const quizName = document.getElementById('newQuizName').value.trim() || 'PollWave Quiz';
-    const password = document.getElementById('newPassword').value.trim();
+    const quizName  = document.getElementById('newQuizName').value.trim() || 'PollWave Quiz';
+    const password  = document.getElementById('newPassword').value.trim();
     if (!password) return showToast('❌ Passwort eingeben');
 
     const res = await fetch('/api/rooms', {
@@ -559,7 +728,9 @@
     const data = await res.json();
     if (!res.ok) return showToast('❌ ' + data.error);
 
-    adminPassword = password;
+    adminPassword    = password;
+    currentQuizName  = quizName;
+    saveRoomToStorage(data.code, quizName);
     initDashboard(data.code, quizName, [], 'waiting', -1, []);
   }
 
@@ -576,8 +747,10 @@
     const data = await res.json();
     if (!res.ok) return showToast('❌ ' + data.error);
 
-    adminPassword = password;
-    initDashboard(data.code, data.quizName || 'PollWave Quiz', data.questions || [], data.state, data.currentQuestion, data.players || []);
+    adminPassword   = password;
+    currentQuizName = data.quizName || 'PollWave Quiz';
+    saveRoomToStorage(data.code, currentQuizName);
+    initDashboard(data.code, currentQuizName, data.questions || [], data.state, data.currentQuestion, data.players || []);
   }
 
   function initDashboard(code, quizName, qs, state, currentQ, players) {
@@ -615,8 +788,13 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password: adminPassword, quizName: name })
     });
-    if (res.ok) showToast('✅ Quiz Name gespeichert');
-    else showToast('❌ Fehler beim Speichern');
+    if (res.ok) {
+      currentQuizName = name;
+      saveRoomToStorage(roomCode, name);
+      showToast('✅ Quiz Name gespeichert');
+    } else {
+      showToast('❌ Fehler beim Speichern');
+    }
   }
 
   // ── Stats & Buttons ──
@@ -662,13 +840,11 @@
       <div class="question-body">
         <input class="input-field" placeholder="Frage eingeben…" value="${escHtml(q.question||'')}"
           oninput="questions[${i}].question=this.value; updateCardTitle(${i},this.value)" />
-
         <div class="time-presets">
           ${[10,15,20,30,45,60,90,120].map(t =>
             `<button class="preset-btn ${(q.time||30)==t?'active':''}"
               onclick="setTime(${i},${t},this)">${t}s</button>`).join('')}
         </div>
-
         <div class="options-grid">
           ${q.options.map((opt,j) => `
             <div class="option-row">
@@ -681,7 +857,6 @@
                 onchange="questions[${i}].correctAnswer=${j}" title="Richtige Antwort" />
             </div>`).join('')}
         </div>
-
         <div class="image-upload-area" onclick="document.getElementById('imgInput_${i}').click()">
           <input type="file" id="imgInput_${i}" accept="image/*" style="display:none"
             onchange="uploadImage(event,${i})" />
@@ -689,7 +864,6 @@
             ? `<img src="${q.image}" class="image-preview" />`
             : `<div>🖼 Bild hochladen (optional)</div><div style="color:#aaa;font-size:13px">Klicken zum Auswählen · max. 5MB</div>`}
         </div>
-
         <div class="row-actions">
           <button class="btn-delete" onclick="deleteQuestion(${i})">🗑 Löschen</button>
         </div>
@@ -698,8 +872,7 @@
   }
 
   function toggleCard(i) {
-    const cards = document.querySelectorAll('.question-card');
-    cards[i].classList.toggle('open');
+    document.querySelectorAll('.question-card')[i].classList.toggle('open');
   }
 
   function updateCardTitle(i, val) {
@@ -792,6 +965,8 @@
 
   socket.on('quizNameUpdated', ({ quizName }) => {
     document.getElementById('quizNameInput').value = quizName;
+    currentQuizName = quizName;
+    saveRoomToStorage(roomCode, quizName);
   });
 
   function showLeaderboard(players) {
@@ -807,6 +982,9 @@
       </div>`).join('');
     section.scrollIntoView({ behavior:'smooth' });
   }
+
+  // ── Init: Gespeicherte Räume laden ──
+  renderSavedRooms();
 </script>
 </body>
 </html>
