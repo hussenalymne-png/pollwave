@@ -141,7 +141,7 @@
     }
     .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(255,102,0,0.5); }
 
-    /* ── Gespeicherte Räume ── */
+    /* ── Saved Rooms ── */
     .saved-rooms-card {
       background: rgba(255,255,255,0.05);
       backdrop-filter: blur(20px);
@@ -263,10 +263,7 @@
       font-weight: 700;
       width: 260px;
     }
-    .quiz-name-input:focus {
-      outline: none;
-      border-color: #FF6600;
-    }
+    .quiz-name-input:focus { outline: none; border-color: #FF6600; }
     .btn-save-name {
       padding: 10px 20px;
       background: linear-gradient(135deg, #4ECDC4, #2bb5ac);
@@ -311,16 +308,12 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-    .btn-start { background: linear-gradient(135deg, #4ECDC4, #2bb5ac); color: #fff; }
-    .btn-next  { background: linear-gradient(135deg, #FF6600, #e55a00); color: #fff; }
-    .btn-end   { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; }
-    .btn-reset { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
-    .btn-present {
-      background: linear-gradient(135deg, #9b59b6, #8e44ad);
-      color: #fff;
-      margin-left: auto;
-    }
-    .btn-control:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+    .btn-start   { background: linear-gradient(135deg, #4ECDC4, #2bb5ac); color: #fff; }
+    .btn-next    { background: linear-gradient(135deg, #FF6600, #e55a00); color: #fff; }
+    .btn-end     { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; }
+    .btn-reset   { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+    .btn-present { background: linear-gradient(135deg, #9b59b6, #8e44ad); color: #fff; margin-left: auto; }
+    .btn-control:hover    { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
     .btn-control:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
     /* ── Questions ── */
@@ -358,8 +351,8 @@
       display: flex; align-items: center; justify-content: center;
       font-weight: 900; font-size: 14px; flex-shrink: 0;
     }
-    .q-title { flex: 1; font-weight: 600; font-size: 15px; }
-    .q-meta { color: #aaa; font-size: 13px; }
+    .q-title  { flex: 1; font-weight: 600; font-size: 15px; }
+    .q-meta   { color: #aaa; font-size: 13px; }
     .q-toggle { color: #aaa; font-size: 18px; transition: transform 0.2s; }
     .question-card.open .q-toggle { transform: rotate(180deg); }
 
@@ -379,10 +372,18 @@
     .input-field:focus { outline: none; border-color: #FF6600; }
 
     .options-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
-    .option-row { display: flex; align-items: center; gap: 8px; }
+    .option-row   { display: flex; align-items: center; gap: 8px; }
     .option-color { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-    .option-input { flex: 1; padding: 8px 12px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff; font-size: 14px; }
-    .option-input:focus { outline: none; border-color: #FF6600; }
+    .option-input {
+      flex: 1;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+    }
+    .option-input:focus  { outline: none; border-color: #FF6600; }
     .option-correct { width: 20px; height: 20px; cursor: pointer; accent-color: #4ECDC4; }
 
     .time-presets { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
@@ -396,12 +397,29 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-    .preset-btn:hover, .preset-btn.active {
+    .preset-btn:hover,
+    .preset-btn.active {
       background: rgba(255,102,0,0.2);
       border-color: #FF6600;
       color: #FF6600;
     }
 
+    /* ── Image Section ── */
+    .image-section {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .image-section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4ECDC4;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
     .image-upload-area {
       border: 2px dashed rgba(255,255,255,0.2);
       border-radius: 12px;
@@ -413,8 +431,64 @@
       position: relative;
     }
     .image-upload-area:hover { border-color: #FF6600; background: rgba(255,102,0,0.05); }
-    .image-upload-area input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-    .image-preview { max-width: 100%; max-height: 200px; border-radius: 8px; margin-top: 10px; }
+    .image-preview { max-width: 100%; max-height: 180px; border-radius: 8px; margin-top: 10px; object-fit: contain; }
+
+    /* Image controls grid */
+    .img-controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 12px; }
+    .img-control-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .img-control-group select {
+      width: 100%;
+      padding: 8px 10px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .img-control-group select:focus { outline: none; border-color: #FF6600; }
+    .img-control-group select option { background: #1a1a2e; }
+
+    /* Chip-style buttons for image settings */
+    .chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.07);
+      color: #ccc;
+      transition: all 0.15s;
+    }
+    .chip:hover { border-color: #FF6600; color: #FF6600; }
+    .chip.active {
+      background: rgba(255,102,0,0.25);
+      border-color: #FF6600;
+      color: #FF6600;
+    }
+
+    .btn-remove-image {
+      padding: 7px 16px;
+      background: rgba(231,76,60,0.15);
+      border: 1px solid rgba(231,76,60,0.3);
+      border-radius: 8px;
+      color: #e74c3c;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 10px;
+    }
+    .btn-remove-image:hover { background: rgba(231,76,60,0.25); }
 
     .row-actions { display: flex; gap: 8px; margin-top: 12px; }
     .btn-delete {
@@ -470,8 +544,8 @@
       border-radius: 12px;
       margin-bottom: 8px;
     }
-    .lb-rank { font-size: 20px; width: 32px; text-align: center; }
-    .lb-name { flex: 1; font-weight: 600; }
+    .lb-rank  { font-size: 20px; width: 32px; text-align: center; }
+    .lb-name  { flex: 1; font-weight: 600; }
     .lb-score { color: #FF6600; font-weight: 800; }
 
     /* ── QR ── */
@@ -509,6 +583,7 @@
       .controls-row { flex-direction: column; }
       .btn-control { width: 100%; }
       .btn-present { margin-left: 0; }
+      .img-controls { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -525,12 +600,10 @@
   <div class="login-card">
     <h2>Admin Login</h2>
     <p>Erstelle oder verwalte dein Quiz</p>
-
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('new')">➕ Neuer Raum</button>
       <button class="tab-btn" onclick="switchTab('rejoin')">🔄 Rejoinen</button>
     </div>
-
     <div id="tabNew">
       <div class="form-group">
         <label>Quiz Name</label>
@@ -542,7 +615,6 @@
       </div>
       <button class="btn-primary" onclick="createRoom()">🚀 Raum erstellen</button>
     </div>
-
     <div id="tabRejoin" style="display:none">
       <div class="form-group">
         <label>Raum Code</label>
@@ -556,7 +628,6 @@
     </div>
   </div>
 
-  <!-- GESPEICHERTE RÄUME -->
   <div class="saved-rooms-card" id="savedRoomsCard">
     <h3>💾 Gespeicherte Räume</h3>
     <div id="savedRoomsList">
@@ -640,7 +711,8 @@
 
   // ── Tabs ──
   function switchTab(tab) {
-    document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (tab==='new'&&i===0)||(tab==='rejoin'&&i===1)));
+    document.querySelectorAll('.tab-btn').forEach((b,i) =>
+      b.classList.toggle('active', (tab==='new'&&i===0)||(tab==='rejoin'&&i===1)));
     document.getElementById('tabNew').style.display    = tab === 'new'    ? 'block' : 'none';
     document.getElementById('tabRejoin').style.display = tab === 'rejoin' ? 'block' : 'none';
   }
@@ -653,35 +725,24 @@
     setTimeout(() => t.classList.remove('show'), 3000);
   }
 
-  // ── Gespeicherte Räume ──
+  // ── Saved Rooms ──
   function getSavedRooms() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
     catch { return []; }
   }
-
   function saveRoomToStorage(code, quizName) {
-    let rooms = getSavedRooms();
-    // Bestehenden Eintrag entfernen falls vorhanden
-    rooms = rooms.filter(r => r.code !== code);
-    // Neuen Eintrag vorne einfügen
-    rooms.unshift({
-      code,
-      quizName: quizName || 'PollWave Quiz',
-      date: new Date().toLocaleDateString('de-CH')
-    });
-    // Max 10 Räume
+    let rooms = getSavedRooms().filter(r => r.code !== code);
+    rooms.unshift({ code, quizName: quizName || 'PollWave Quiz', date: new Date().toLocaleDateString('de-CH') });
     if (rooms.length > MAX_SAVED_ROOMS) rooms = rooms.slice(0, MAX_SAVED_ROOMS);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(rooms));
     renderSavedRooms();
   }
-
   function deleteSavedRoom(code) {
     let rooms = getSavedRooms().filter(r => r.code !== code);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(rooms));
     renderSavedRooms();
     showToast('🗑 Raum entfernt');
   }
-
   function renderSavedRooms() {
     const rooms = getSavedRooms();
     const list  = document.getElementById('savedRoomsList');
@@ -698,38 +759,33 @@
         <button class="btn-delete-room" onclick="deleteSavedRoom('${r.code}')">🗑</button>
       </div>`).join('');
   }
-
   function quickRejoin(code) {
-    // Tab auf Rejoin wechseln und Code einfügen
     switchTab('rejoin');
     document.getElementById('rejoinCode').value = code;
     document.getElementById('rejoinPassword').focus();
     showToast('🔑 Passwort eingeben und Rejoinen');
   }
 
-  // ── Präsentation öffnen ──
+  // ── Presentation ──
   function openPresentation() {
     if (!roomCode) return showToast('❌ Kein aktiver Raum');
-    const url = `${window.location.origin}/present.html?room=${roomCode}`;
-    window.open(url, '_blank');
+    window.open(`${window.location.origin}/present.html?room=${roomCode}`, '_blank');
   }
 
   // ── Create / Rejoin ──
   async function createRoom() {
-    const quizName  = document.getElementById('newQuizName').value.trim() || 'PollWave Quiz';
-    const password  = document.getElementById('newPassword').value.trim();
+    const quizName = document.getElementById('newQuizName').value.trim() || 'PollWave Quiz';
+    const password = document.getElementById('newPassword').value.trim();
     if (!password) return showToast('❌ Passwort eingeben');
-
-    const res = await fetch('/api/rooms', {
+    const res  = await fetch('/api/rooms', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password, quizName })
     });
     const data = await res.json();
     if (!res.ok) return showToast('❌ ' + data.error);
-
-    adminPassword    = password;
-    currentQuizName  = quizName;
+    adminPassword   = password;
+    currentQuizName = quizName;
     saveRoomToStorage(data.code, quizName);
     initDashboard(data.code, quizName, [], 'waiting', -1, []);
   }
@@ -738,15 +794,13 @@
     const code     = document.getElementById('rejoinCode').value.trim().toUpperCase();
     const password = document.getElementById('rejoinPassword').value.trim();
     if (!code || !password) return showToast('❌ Alle Felder ausfüllen');
-
-    const res = await fetch(`/api/rooms/${code}/rejoin`, {
+    const res  = await fetch(`/api/rooms/${code}/rejoin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password })
     });
     const data = await res.json();
     if (!res.ok) return showToast('❌ ' + data.error);
-
     adminPassword   = password;
     currentQuizName = data.quizName || 'PollWave Quiz';
     saveRoomToStorage(data.code, currentQuizName);
@@ -757,17 +811,14 @@
     roomCode  = code;
     questions = qs;
     gameState = state;
-
-    document.getElementById('loginScreen').style.display  = 'none';
-    document.getElementById('dashboard').style.display    = 'block';
-    document.getElementById('displayCode').textContent    = code;
-    document.getElementById('quizNameInput').value        = quizName;
-
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('dashboard').style.display   = 'block';
+    document.getElementById('displayCode').textContent   = code;
+    document.getElementById('quizNameInput').value       = quizName;
     generateQR(code);
     renderQuestions();
     updateStats(players.length, qs.length, currentQ, state);
     updateButtons(state);
-
     socket.emit('joinRoom', { code, name: '__presenter__' });
   }
 
@@ -805,7 +856,6 @@
     document.getElementById('statState').textContent     = state === 'waiting' ? '⏳' : state === 'playing' ? '▶' : '✅';
     document.getElementById('displayMeta').textContent   = `${players} Spieler · ${qCount} Fragen`;
   }
-
   function updateButtons(state) {
     gameState = state;
     document.getElementById('btnStart').disabled = state !== 'waiting';
@@ -827,9 +877,42 @@
     document.getElementById('statQuestions').textContent = questions.length;
   }
 
+  // ── Image Settings Chips ──
+  function setImageProp(i, prop, value) {
+    questions[i][prop] = value;
+    // Update chip UI
+    const group = document.querySelectorAll(`[data-q="${i}"][data-prop="${prop}"]`);
+    group.forEach(chip => chip.classList.toggle('active', chip.dataset.val === value));
+  }
+
   function buildQuestionCard(q, i) {
     const card = document.createElement('div');
     card.className = 'question-card';
+
+    // Defaults for image settings
+    const imgPos  = q.imagePosition || 'right';
+    const imgSize = q.imageSize     || 'medium';
+    const imgFit  = q.imageFit      || 'cover';
+
+    const posOptions  = [
+      { v:'left',       l:'◀ Links' },
+      { v:'right',      l:'▶ Rechts' },
+      { v:'top',        l:'▲ Oben' },
+      { v:'bottom',     l:'▼ Unten' },
+      { v:'background', l:'🖼 Hintergrund' }
+    ];
+    const sizeOptions = [
+      { v:'small',  l:'S' },
+      { v:'medium', l:'M' },
+      { v:'large',  l:'L' },
+      { v:'full',   l:'Full' }
+    ];
+    const fitOptions  = [
+      { v:'cover',   l:'Cover' },
+      { v:'contain', l:'Contain' },
+      { v:'fill',    l:'Fill' }
+    ];
+
     card.innerHTML = `
       <div class="question-header" onclick="toggleCard(${i})">
         <div class="q-number">${i+1}</div>
@@ -840,11 +923,13 @@
       <div class="question-body">
         <input class="input-field" placeholder="Frage eingeben…" value="${escHtml(q.question||'')}"
           oninput="questions[${i}].question=this.value; updateCardTitle(${i},this.value)" />
+
         <div class="time-presets">
           ${[10,15,20,30,45,60,90,120].map(t =>
             `<button class="preset-btn ${(q.time||30)==t?'active':''}"
               onclick="setTime(${i},${t},this)">${t}s</button>`).join('')}
         </div>
+
         <div class="options-grid">
           ${q.options.map((opt,j) => `
             <div class="option-row">
@@ -857,13 +942,61 @@
                 onchange="questions[${i}].correctAnswer=${j}" title="Richtige Antwort" />
             </div>`).join('')}
         </div>
-        <div class="image-upload-area" onclick="document.getElementById('imgInput_${i}').click()">
-          <input type="file" id="imgInput_${i}" accept="image/*" style="display:none"
-            onchange="uploadImage(event,${i})" />
-          ${q.image
-            ? `<img src="${q.image}" class="image-preview" />`
-            : `<div>🖼 Bild hochladen (optional)</div><div style="color:#aaa;font-size:13px">Klicken zum Auswählen · max. 5MB</div>`}
+
+        <!-- IMAGE SECTION -->
+        <div class="image-section">
+          <div class="image-section-title">🖼 Bild</div>
+
+          <div class="image-upload-area" onclick="document.getElementById('imgInput_${i}').click()">
+            <input type="file" id="imgInput_${i}" accept="image/*" style="display:none"
+              onchange="uploadImage(event,${i})" />
+            ${q.image
+              ? `<img src="${q.image}" class="image-preview" />`
+              : `<div>🖼 Bild hochladen (optional)</div>
+                 <div style="color:#aaa;font-size:13px;margin-top:4px">Klicken · max. 5MB</div>`}
+          </div>
+
+          ${q.image ? `
+            <button class="btn-remove-image" onclick="removeImage(${i})">🗑 Bild entfernen</button>
+          ` : ''}
+
+          <!-- Image Controls (only shown if image exists) -->
+          <div id="imgControls_${i}" style="${q.image ? '' : 'display:none'}">
+            <div class="img-controls">
+              <div class="img-control-group">
+                <label>📐 Position</label>
+                <div class="chip-group">
+                  ${posOptions.map(o => `
+                    <div class="chip ${imgPos===o.v?'active':''}"
+                      data-q="${i}" data-prop="imagePosition" data-val="${o.v}"
+                      onclick="setImageProp(${i},'imagePosition','${o.v}')">${o.l}</div>
+                  `).join('')}
+                </div>
+              </div>
+              <div class="img-control-group">
+                <label>📏 Grösse</label>
+                <div class="chip-group">
+                  ${sizeOptions.map(o => `
+                    <div class="chip ${imgSize===o.v?'active':''}"
+                      data-q="${i}" data-prop="imageSize" data-val="${o.v}"
+                      onclick="setImageProp(${i},'imageSize','${o.v}')">${o.l}</div>
+                  `).join('')}
+                </div>
+              </div>
+              <div class="img-control-group">
+                <label>✂️ Zuschnitt</label>
+                <div class="chip-group">
+                  ${fitOptions.map(o => `
+                    <div class="chip ${imgFit===o.v?'active':''}"
+                      data-q="${i}" data-prop="imageFit" data-val="${o.v}"
+                      onclick="setImageProp(${i},'imageFit','${o.v}')">${o.l}</div>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+
         <div class="row-actions">
           <button class="btn-delete" onclick="deleteQuestion(${i})">🗑 Löschen</button>
         </div>
@@ -871,14 +1004,23 @@
     return card;
   }
 
+  function removeImage(i) {
+    questions[i].image = null;
+    questions[i].imagePosition = 'right';
+    questions[i].imageSize = 'medium';
+    questions[i].imageFit = 'cover';
+    renderQuestions();
+    // Re-open the card
+    const cards = document.querySelectorAll('.question-card');
+    cards[i].classList.add('open');
+  }
+
   function toggleCard(i) {
     document.querySelectorAll('.question-card')[i].classList.toggle('open');
   }
-
   function updateCardTitle(i, val) {
     document.querySelectorAll('.question-card')[i].querySelector('.q-title').textContent = val || 'Neue Frage';
   }
-
   function setTime(i, t, btn) {
     questions[i].time = t;
     btn.closest('.time-presets').querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
@@ -886,15 +1028,20 @@
   }
 
   function escHtml(str) {
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
   function addQuestion() {
-    questions.push({ question:'', options:['','','',''], correctAnswer:0, time:30, image:null });
+    questions.push({
+      question: '', options: ['','','',''], correctAnswer: 0, time: 30,
+      image: null, imagePosition: 'right', imageSize: 'medium', imageFit: 'cover'
+    });
     renderQuestions();
     const cards = document.querySelectorAll('.question-card');
     cards[cards.length-1].classList.add('open');
-    cards[cards.length-1].scrollIntoView({ behavior:'smooth' });
+    cards[cards.length-1].scrollIntoView({ behavior: 'smooth' });
   }
 
   function deleteQuestion(i) {
@@ -907,11 +1054,17 @@
     if (!file) return;
     const fd = new FormData();
     fd.append('image', file);
-    const res  = await fetch('/api/upload', { method:'POST', body: fd });
+    const res  = await fetch('/api/upload', { method: 'POST', body: fd });
     const data = await res.json();
     if (data.url) {
-      questions[i].image = data.url;
+      questions[i].image         = data.url;
+      questions[i].imagePosition = questions[i].imagePosition || 'right';
+      questions[i].imageSize     = questions[i].imageSize     || 'medium';
+      questions[i].imageFit      = questions[i].imageFit      || 'cover';
       renderQuestions();
+      // Re-open the card
+      const cards = document.querySelectorAll('.question-card');
+      cards[i].classList.add('open');
       showToast('✅ Bild hochgeladen');
     }
   }
@@ -919,7 +1072,7 @@
   async function saveQuestions() {
     const res = await fetch(`/api/rooms/${roomCode}/questions`, {
       method: 'PUT',
-      headers: { 'Content-Type':'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password: adminPassword, questions })
     });
     if (res.ok) showToast('✅ Fragen gespeichert');
@@ -931,38 +1084,31 @@
     document.getElementById('statPlayers').textContent = playerCount;
     document.getElementById('displayMeta').textContent = `${playerCount} Spieler · ${questions.length} Fragen`;
   });
-
   socket.on('playerLeft', ({ playerCount }) => {
     document.getElementById('statPlayers').textContent = playerCount;
   });
-
   socket.on('gameStarted', () => {
     updateButtons('playing');
     showToast('▶ Spiel gestartet!');
   });
-
   socket.on('newQuestion', ({ index, total }) => {
     document.getElementById('statCurrent').textContent = `${index+1}/${total}`;
     updateButtons('playing');
   });
-
   socket.on('questionEnd', ({ stats }) => {
     showLeaderboard(stats);
   });
-
   socket.on('gameFinished', ({ players }) => {
     updateButtons('finished');
     showLeaderboard(players);
     showToast('🏆 Spiel beendet!');
   });
-
   socket.on('gameReset', () => {
     updateButtons('waiting');
     document.getElementById('statCurrent').textContent = '-';
     document.getElementById('leaderboardSection').style.display = 'none';
     showToast('🔄 Spiel zurückgesetzt');
   });
-
   socket.on('quizNameUpdated', ({ quizName }) => {
     document.getElementById('quizNameInput').value = quizName;
     currentQuizName = quizName;
@@ -980,10 +1126,10 @@
         <div class="lb-name">${escHtml(p.name)}</div>
         <div class="lb-score">${p.score} Pts</div>
       </div>`).join('');
-    section.scrollIntoView({ behavior:'smooth' });
+    section.scrollIntoView({ behavior: 'smooth' });
   }
 
-  // ── Init: Gespeicherte Räume laden ──
+  // ── Init ──
   renderSavedRooms();
 </script>
 </body>

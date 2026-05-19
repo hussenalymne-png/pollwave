@@ -1,18 +1,16 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PollWave – Präsentation</title>
+  <title>PollWave Präsentation</title>
   <script src="/socket.io/socket.io.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Inter', sans-serif;
-      background: #0f0f1a;
+      font-family: 'Segoe UI', sans-serif;
+      background: #0a0a1a;
       color: #fff;
       min-height: 100vh;
       overflow: hidden;
@@ -20,7 +18,8 @@
 
     /* ── Particles ── */
     #particles {
-      position: fixed; inset: 0;
+      position: fixed;
+      inset: 0;
       pointer-events: none;
       z-index: 0;
       overflow: hidden;
@@ -28,436 +27,616 @@
     .particle {
       position: absolute;
       border-radius: 50%;
-      animation: floatUp linear infinite;
       opacity: 0.15;
+      animation: floatUp linear infinite;
     }
     @keyframes floatUp {
       0%   { transform: translateY(100vh) scale(0); opacity: 0; }
       10%  { opacity: 0.15; }
       90%  { opacity: 0.15; }
-      100% { transform: translateY(-100px) scale(1); opacity: 0; }
+      100% { transform: translateY(-10vh) scale(1); opacity: 0; }
     }
 
-    /* ── Screens ── */
-    .screen {
-      position: fixed; inset: 0;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 1;
-      padding: 40px;
-    }
-    .screen.active { display: flex; }
-
-    /* ── Header Bar ── */
-    .top-bar {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      height: 64px;
-      background: rgba(15,15,26,0.95);
+    /* ── Header ── */
+    .header {
+      position: relative;
+      z-index: 10;
+      background: linear-gradient(135deg, rgba(26,26,46,0.95), rgba(22,33,62,0.95));
       backdrop-filter: blur(20px);
-      border-bottom: 2px solid rgba(255,102,0,0.4);
+      padding: 12px 32px;
       display: flex;
       align-items: center;
-      padding: 0 32px;
       gap: 16px;
-      z-index: 10;
+      border-bottom: 2px solid #FF6600;
+      box-shadow: 0 2px 30px rgba(255,102,0,0.4);
     }
-    .top-bar img { height: 36px; }
-    .top-bar .quiz-title {
+    .header img { height: 36px; }
+    .header-title {
       font-size: 20px;
       font-weight: 800;
       background: linear-gradient(135deg, #FF6600, #4ECDC4);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    .top-bar .room-pill {
+    .header-room {
       margin-left: auto;
-      background: rgba(255,102,0,0.15);
-      border: 1px solid rgba(255,102,0,0.5);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .room-code-badge {
+      background: rgba(255,102,0,0.2);
+      border: 1px solid #FF6600;
       color: #FF6600;
       padding: 6px 16px;
       border-radius: 20px;
-      font-weight: 800;
-      font-size: 16px;
-      letter-spacing: 2px;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 3px;
     }
+    .player-count-badge {
+      background: rgba(78,205,196,0.2);
+      border: 1px solid #4ECDC4;
+      color: #4ECDC4;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    /* ── Next Question Button (Presenter only) ── */
+    #btnNextQuestion {
+      display: none;
+      padding: 8px 20px;
+      background: linear-gradient(135deg, #FF6600, #e55a00);
+      border: none;
+      border-radius: 20px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 15px rgba(255,102,0,0.5);
+      letter-spacing: 0.5px;
+    }
+    #btnNextQuestion:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255,102,0,0.7);
+    }
+    #btnNextQuestion.visible { display: block; }
+
+    /* ── Screens ── */
+    .screen {
+      position: relative;
+      z-index: 5;
+      display: none;
+      height: calc(100vh - 66px);
+      padding: 32px;
+      overflow: hidden;
+    }
+    .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
     /* ── Waiting Screen ── */
-    #waitScreen {
-      background: radial-gradient(ellipse at 30% 40%, rgba(255,102,0,0.15) 0%, transparent 60%),
-                  radial-gradient(ellipse at 70% 60%, rgba(78,205,196,0.1) 0%, transparent 60%),
-                  #0f0f1a;
-      padding-top: 64px;
-    }
-    .wait-logo {
-      width: 120px;
-      height: 120px;
-      background: rgba(255,102,0,0.1);
-      border: 2px solid rgba(255,102,0,0.4);
-      border-radius: 30px;
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 24px;
-      animation: pulse 2s ease-in-out infinite;
-    }
-    .wait-logo img { width: 80px; }
-    @keyframes pulse {
-      0%,100% { box-shadow: 0 0 20px rgba(255,102,0,0.3); }
-      50%      { box-shadow: 0 0 40px rgba(255,102,0,0.6); }
-    }
-
-    .wait-title {
-      font-size: clamp(32px, 5vw, 60px);
+    #waitingScreen .quiz-name {
+      font-size: 52px;
       font-weight: 900;
+      text-align: center;
       background: linear-gradient(135deg, #FF6600, #4ECDC4);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      margin-bottom: 16px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.85; transform: scale(1.02); }
+    }
+    #waitingScreen .join-info {
+      font-size: 22px;
+      color: #aaa;
       text-align: center;
-      margin-bottom: 8px;
+      margin-bottom: 40px;
     }
-    .wait-subtitle {
-      font-size: 20px;
-      color: rgba(255,255,255,0.6);
-      margin-bottom: 48px;
-    }
-
-    .join-info {
-      display: flex;
-      gap: 48px;
-      align-items: center;
-      background: rgba(255,255,255,0.05);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 24px;
-      padding: 32px 48px;
-    }
-    .qr-wrap img { border-radius: 16px; width: 160px; }
-    .join-details { text-align: left; }
-    .join-url { font-size: 18px; color: #4ECDC4; font-weight: 700; margin-bottom: 12px; }
-    .join-code { font-size: 56px; font-weight: 900; color: #FF6600; letter-spacing: 6px; line-height: 1; }
-    .join-code-label { font-size: 14px; color: #aaa; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
-    .player-count {
-      margin-top: 16px;
-      background: rgba(78,205,196,0.15);
-      border: 1px solid rgba(78,205,196,0.4);
-      border-radius: 12px;
-      padding: 8px 16px;
-      font-size: 16px;
+    #waitingScreen .join-url {
+      font-size: 28px;
+      font-weight: 800;
       color: #4ECDC4;
-      font-weight: 700;
+      background: rgba(78,205,196,0.1);
+      border: 2px solid rgba(78,205,196,0.4);
+      border-radius: 20px;
+      padding: 16px 40px;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .qr-container {
+      background: #fff;
+      padding: 16px;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      margin-bottom: 32px;
+    }
+    .qr-container img { display: block; }
+    .waiting-players {
+      font-size: 20px;
+      color: #aaa;
+      text-align: center;
+    }
+    .waiting-players span {
+      color: #FF6600;
+      font-weight: 900;
+      font-size: 28px;
     }
 
     /* ── Question Screen ── */
     #questionScreen {
-      padding-top: 80px;
-      justify-content: flex-start;
-      background: #0f0f1a;
-    }
-    .question-wrap {
-      width: 100%;
-      max-width: 1100px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
+      padding: 20px 32px;
+      gap: 0;
     }
 
-    .question-header-row {
+    .question-meta-bar {
+      width: 100%;
       display: flex;
       align-items: center;
-      gap: 20px;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      flex-shrink: 0;
     }
-    .q-counter {
+    .q-index-badge {
       background: rgba(255,102,0,0.2);
       border: 1px solid rgba(255,102,0,0.5);
-      padding: 8px 20px;
-      border-radius: 20px;
-      font-size: 14px;
-      font-weight: 700;
       color: #FF6600;
-      white-space: nowrap;
-    }
-    .q-text {
-      font-size: clamp(20px, 3vw, 32px);
+      padding: 6px 18px;
+      border-radius: 20px;
       font-weight: 800;
-      flex: 1;
-      line-height: 1.3;
+      font-size: 15px;
+    }
+    .q-answers-badge {
+      background: rgba(78,205,196,0.15);
+      border: 1px solid rgba(78,205,196,0.4);
+      color: #4ECDC4;
+      padding: 6px 18px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 15px;
     }
 
-    /* Timer */
-    .timer-wrap {
+    /* SVG Countdown */
+    .countdown-wrap {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      flex-shrink: 0;
+    }
+    .countdown-wrap svg {
+      transform: rotate(-90deg);
+      width: 80px; height: 80px;
+    }
+    .countdown-track {
+      fill: none;
+      stroke: rgba(255,255,255,0.1);
+      stroke-width: 6;
+    }
+    .countdown-arc {
+      fill: none;
+      stroke: #FF6600;
+      stroke-width: 6;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1s linear, stroke 0.3s;
+    }
+    .countdown-num {
+      position: absolute;
+      inset: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-    }
-    .timer-circle {
-      position: relative;
-      width: 100px; height: 100px;
-      flex-shrink: 0;
-    }
-    .timer-circle svg { transform: rotate(-90deg); }
-    .timer-circle .timer-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 8; }
-    .timer-circle .timer-progress {
-      fill: none;
-      stroke: #FF6600;
-      stroke-width: 8;
-      stroke-linecap: round;
-      stroke-dasharray: 251;
-      stroke-dashoffset: 0;
-      transition: stroke-dashoffset 1s linear, stroke 0.3s;
-    }
-    .timer-number {
-      position: absolute;
-      inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 28px;
+      font-size: 22px;
       font-weight: 900;
       color: #FF6600;
     }
 
-    /* Answer Options */
-    .options-grid {
+    /* Question content area */
+    .question-content {
+      width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    /* Layout: no image */
+    .layout-no-image {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    /* Layout: with image */
+    .layout-with-image {
+      display: flex;
+      height: 100%;
+      gap: 24px;
+    }
+    .layout-image-top    { flex-direction: column; }
+    .layout-image-bottom { flex-direction: column-reverse; }
+    .layout-image-left   { flex-direction: row; }
+    .layout-image-right  { flex-direction: row-reverse; }
+    .layout-image-background { flex-direction: column; position: relative; }
+
+    /* Question text box */
+    .question-text-box {
+      background: rgba(255,255,255,0.07);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px;
+      padding: 24px 36px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .question-text {
+      font-size: clamp(22px, 3vw, 38px);
+      font-weight: 800;
+      line-height: 1.3;
+      color: #fff;
+    }
+
+    /* Image panel */
+    .image-panel {
+      border-radius: 16px;
+      overflow: hidden;
+      flex-shrink: 0;
+      position: relative;
+    }
+    /* Size classes */
+    .img-size-small  { flex-basis: 30%; max-width: 30%; }
+    .img-size-medium { flex-basis: 45%; max-width: 45%; }
+    .img-size-large  { flex-basis: 60%; max-width: 60%; }
+    .img-size-full   { flex-basis: 100%; max-width: 100%; height: 45%; }
+
+    /* For top/bottom layouts, use height instead */
+    .layout-image-top    .img-size-small,
+    .layout-image-bottom .img-size-small  { flex-basis: auto; max-width: 100%; height: 25%; }
+    .layout-image-top    .img-size-medium,
+    .layout-image-bottom .img-size-medium { flex-basis: auto; max-width: 100%; height: 35%; }
+    .layout-image-top    .img-size-large,
+    .layout-image-bottom .img-size-large  { flex-basis: auto; max-width: 100%; height: 50%; }
+    .layout-image-top    .img-size-full,
+    .layout-image-bottom .img-size-full   { flex-basis: auto; max-width: 100%; height: 55%; }
+
+    /* Background layout */
+    .layout-image-background .image-panel {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      border-radius: 0;
+      max-width: 100%;
+      flex-basis: auto;
+      height: 100%;
+    }
+    .layout-image-background .question-text-box,
+    .layout-image-background .options-area {
+      position: relative;
+      z-index: 1;
+    }
+    .layout-image-background .image-panel img {
+      width: 100%;
+      height: 100%;
+    }
+
+    .image-panel img {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    /* object-fit classes */
+    .img-fit-cover   img { object-fit: cover; }
+    .img-fit-contain img { object-fit: contain; background: rgba(0,0,0,0.3); }
+    .img-fit-fill    img { object-fit: fill; }
+
+    /* Options area */
+    .options-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      min-height: 0;
+      padding-top: 12px;
+    }
+    .options-grid-present {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      gap: 12px;
     }
-    .option-card {
+
+    .option-bar {
       border-radius: 16px;
-      padding: 20px 24px;
-      font-size: clamp(16px, 2vw, 22px);
-      font-weight: 700;
+      padding: 0;
+      overflow: hidden;
+      position: relative;
+      min-height: 70px;
+      cursor: default;
+      transition: transform 0.2s;
+    }
+    .option-bar:hover { transform: scale(1.01); }
+
+    .option-bg {
+      position: absolute;
+      inset: 0;
+      opacity: 0.85;
+    }
+    .option-fill {
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      width: 0%;
+      background: rgba(255,255,255,0.2);
+      transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+    }
+    .option-inner {
+      position: relative;
+      z-index: 2;
       display: flex;
       align-items: center;
       gap: 14px;
-      position: relative;
-      overflow: hidden;
-      transition: transform 0.2s;
+      padding: 14px 20px;
+      height: 100%;
     }
-    .option-icon {
+    .option-letter {
       width: 36px; height: 36px;
-      border-radius: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.25);
       display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
-      background: rgba(0,0,0,0.2);
+      font-weight: 900;
+      font-size: 16px;
       flex-shrink: 0;
     }
-    .option-bar {
-      position: absolute;
-      left: 0; top: 0; bottom: 0;
-      opacity: 0.3;
-      transition: width 0.5s ease;
-      width: 0%;
-    }
-    .option-text { position: relative; z-index: 1; flex: 1; }
-    .option-count {
-      position: relative; z-index: 1;
-      font-size: 14px;
-      opacity: 0.8;
-      font-weight: 800;
-    }
-
-    .opt-0 { background: rgba(231,76,60,0.25);  border: 2px solid rgba(231,76,60,0.6); }
-    .opt-1 { background: rgba(52,152,219,0.25); border: 2px solid rgba(52,152,219,0.6); }
-    .opt-2 { background: rgba(241,196,15,0.25); border: 2px solid rgba(241,196,15,0.6); }
-    .opt-3 { background: rgba(46,204,113,0.25); border: 2px solid rgba(46,204,113,0.6); }
-
-    .opt-0 .option-bar { background: #e74c3c; }
-    .opt-1 .option-bar { background: #3498db; }
-    .opt-2 .option-bar { background: #f1c40f; }
-    .opt-3 .option-bar { background: #2ecc71; }
-
-    .option-card.correct { border-color: #4ECDC4 !important; box-shadow: 0 0 20px rgba(78,205,196,0.4); }
-    .option-card.wrong   { opacity: 0.4; }
-
-    /* Answer stat bar */
-    .answer-progress {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 12px;
-      padding: 12px 20px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 14px;
-      color: #aaa;
-    }
-    .answer-progress-bar {
+    .option-text {
       flex: 1;
-      height: 6px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 3px;
-      overflow: hidden;
+      font-size: clamp(14px, 1.8vw, 20px);
+      font-weight: 700;
+      line-height: 1.3;
     }
-    .answer-progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #FF6600, #4ECDC4);
-      border-radius: 3px;
-      transition: width 0.4s ease;
-      width: 0%;
-    }
-
-    /* Question Image */
-    .question-image {
-      width: 100%;
-      max-height: 200px;
-      object-fit: contain;
-      border-radius: 16px;
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-
-    /* ── Presenter Next Button ── */
-    .presenter-btn-wrap {
-      display: none;
-      justify-content: center;
-      margin-top: 8px;
-    }
-    .presenter-btn-wrap.visible { display: flex; }
-    .btn-next-presenter {
-      padding: 16px 48px;
-      background: linear-gradient(135deg, #FF6600, #e55a00);
-      border: none;
-      border-radius: 50px;
-      color: #fff;
-      font-size: 20px;
-      font-weight: 800;
-      cursor: pointer;
-      box-shadow: 0 6px 30px rgba(255,102,0,0.5);
-      transition: all 0.2s;
-      animation: btnPulse 1.5s ease-in-out infinite;
-    }
-    .btn-next-presenter:hover {
-      transform: scale(1.05);
-      box-shadow: 0 8px 40px rgba(255,102,0,0.7);
-    }
-    @keyframes btnPulse {
-      0%,100% { box-shadow: 0 6px 30px rgba(255,102,0,0.5); }
-      50%      { box-shadow: 0 6px 50px rgba(255,102,0,0.8); }
-    }
-
-    /* ── Podium Screen ── */
-    #podiumScreen {
-      background: radial-gradient(ellipse at center, rgba(255,102,0,0.2) 0%, transparent 70%), #0f0f1a;
-      padding-top: 64px;
-    }
-    .podium-title {
-      font-size: clamp(28px, 4vw, 52px);
+    .option-count {
+      font-size: 22px;
       font-weight: 900;
+      flex-shrink: 0;
+      min-width: 40px;
+      text-align: right;
+    }
+    .option-bar.correct .option-bg {
+      box-shadow: inset 0 0 0 3px rgba(255,255,255,0.6);
+    }
+    .option-bar.correct::after {
+      content: '✓';
+      position: absolute;
+      top: 8px; right: 12px;
+      font-size: 20px;
+      z-index: 3;
+    }
+    .option-bar.wrong { opacity: 0.45; }
+
+    /* ── Question End / Leaderboard overlay ── */
+    #questionEndOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: rgba(10,10,26,0.95);
+      backdrop-filter: blur(20px);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    }
+    #questionEndOverlay.active { display: flex; }
+    .end-title {
+      font-size: clamp(24px, 4vw, 48px);
+      font-weight: 900;
+      margin-bottom: 32px;
+      text-align: center;
       background: linear-gradient(135deg, #FF6600, #4ECDC4);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      margin-bottom: 48px;
-      text-align: center;
     }
-    .podium-wrap {
+    .mini-leaderboard {
+      width: 100%;
+      max-width: 700px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .lb-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 14px 20px;
+      animation: slideIn 0.4s ease both;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-30px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .lb-rank-icon { font-size: 28px; width: 36px; text-align: center; }
+    .lb-name { flex: 1; font-size: 20px; font-weight: 700; }
+    .lb-pts  { font-size: 22px; font-weight: 900; color: #FF6600; }
+    .lb-delta { font-size: 14px; color: #4ECDC4; font-weight: 700; min-width: 60px; text-align: right; }
+
+    /* ── Podium / Game Finished ── */
+    #podiumScreen {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: radial-gradient(ellipse at center, #1a0a2e 0%, #0a0a1a 100%);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      overflow: hidden;
+    }
+    #podiumScreen.active { display: flex; }
+
+    .confetti-wrap {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .confetti-piece {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      top: -10px;
+      animation: confettiFall linear infinite;
+      border-radius: 2px;
+    }
+    @keyframes confettiFall {
+      0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+
+    .podium-title {
+      font-size: clamp(32px, 5vw, 64px);
+      font-weight: 900;
+      text-align: center;
+      background: linear-gradient(135deg, #FFD700, #FF6600, #4ECDC4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 48px;
+      position: relative;
+      z-index: 5;
+      animation: titlePop 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes titlePop {
+      from { transform: scale(0.5); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+
+    .podium-stage {
       display: flex;
       align-items: flex-end;
       justify-content: center;
       gap: 16px;
-      margin-bottom: 48px;
+      position: relative;
+      z-index: 5;
+      margin-bottom: 40px;
     }
     .podium-place {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
     }
     .podium-avatar {
-      width: 70px; height: 70px;
+      width: 80px; height: 80px;
       border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 28px;
-      font-weight: 900;
-      border: 3px solid transparent;
-    }
-    .podium-name  { font-weight: 800; font-size: 16px; text-align: center; max-width: 120px; }
-    .podium-score { font-size: 14px; color: #aaa; }
-    .podium-block {
-      border-radius: 12px 12px 0 0;
-      width: 100px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 32px;
+      font-weight: 900;
+      border: 3px solid rgba(255,255,255,0.3);
+      animation: avatarBounce 0.8s cubic-bezier(0.34,1.56,0.64,1) both;
     }
-    .place-1 .podium-avatar { background: rgba(255,215,0,0.2); border-color: #FFD700; }
-    .place-1 .podium-block  { background: linear-gradient(180deg, #FFD700, #FFA500); height: 140px; }
-    .place-2 .podium-avatar { background: rgba(192,192,192,0.2); border-color: #C0C0C0; }
-    .place-2 .podium-block  { background: linear-gradient(180deg, #C0C0C0, #A0A0A0); height: 100px; }
-    .place-3 .podium-avatar { background: rgba(205,127,50,0.2); border-color: #CD7F32; }
-    .place-3 .podium-block  { background: linear-gradient(180deg, #CD7F32, #A0522D); height: 70px; }
-
-    .podium-list {
-      width: 100%;
-      max-width: 500px;
+    @keyframes avatarBounce {
+      from { transform: scale(0) translateY(30px); opacity: 0; }
+      to   { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .podium-player-name {
+      font-size: 16px;
+      font-weight: 800;
+      text-align: center;
+      max-width: 140px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .podium-player-score {
+      font-size: 20px;
+      font-weight: 900;
+      color: #FF6600;
+    }
+    .podium-block {
+      border-radius: 12px 12px 0 0;
+      width: 140px;
       display: flex;
-      flex-direction: column;
-      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      animation: blockRise 0.8s cubic-bezier(0.34,1.56,0.64,1) both;
     }
-    .podium-row {
+    @keyframes blockRise {
+      from { transform: scaleY(0); transform-origin: bottom; opacity: 0; }
+      to   { transform: scaleY(1); transform-origin: bottom; opacity: 1; }
+    }
+    .place-1 .podium-avatar {
+      background: linear-gradient(135deg, #FFD700, #FFA500);
+      box-shadow: 0 0 30px rgba(255,215,0,0.6);
+      width: 100px; height: 100px;
+      font-size: 40px;
+      animation-delay: 0.2s;
+    }
+    .place-2 .podium-avatar {
+      background: linear-gradient(135deg, #C0C0C0, #A8A8A8);
+      box-shadow: 0 0 20px rgba(192,192,192,0.5);
+      animation-delay: 0.1s;
+    }
+    .place-3 .podium-avatar {
+      background: linear-gradient(135deg, #CD7F32, #A0522D);
+      box-shadow: 0 0 20px rgba(205,127,50,0.5);
+    }
+    .place-1 .podium-block {
+      background: linear-gradient(180deg, rgba(255,215,0,0.3), rgba(255,165,0,0.2));
+      border: 2px solid rgba(255,215,0,0.5);
+      height: 160px;
+      animation-delay: 0.4s;
+    }
+    .place-2 .podium-block {
+      background: linear-gradient(180deg, rgba(192,192,192,0.3), rgba(168,168,168,0.2));
+      border: 2px solid rgba(192,192,192,0.5);
+      height: 120px;
+      animation-delay: 0.3s;
+    }
+    .place-3 .podium-block {
+      background: linear-gradient(180deg, rgba(205,127,50,0.3), rgba(160,82,45,0.2));
+      border: 2px solid rgba(205,127,50,0.5);
+      height: 90px;
+      animation-delay: 0.2s;
+    }
+
+    /* Full results list below podium */
+    .full-results {
+      width: 100%;
+      max-width: 600px;
+      position: relative;
+      z-index: 5;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .result-row {
       display: flex;
       align-items: center;
       gap: 12px;
-      background: rgba(255,255,255,0.05);
-      border-radius: 12px;
       padding: 10px 16px;
-    }
-    .podium-row .rank { width: 28px; text-align: center; font-weight: 800; color: #aaa; }
-    .podium-row .p-name { flex: 1; font-weight: 600; }
-    .podium-row .p-score { color: #FF6600; font-weight: 800; }
-
-    /* ── Confetti ── */
-    #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 100; }
-
-    /* ── Join overlay for presenter ── */
-    #joinOverlay {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.85);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 200;
-      backdrop-filter: blur(10px);
-    }
-    .join-box {
       background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,102,0,0.4);
-      border-radius: 24px;
-      padding: 40px;
-      width: 380px;
-      text-align: center;
-    }
-    .join-box h2 {
-      font-size: 28px;
-      font-weight: 900;
-      background: linear-gradient(135deg, #FF6600, #4ECDC4);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 8px;
-    }
-    .join-box p { color: #aaa; margin-bottom: 24px; }
-    .join-box input {
-      width: 100%;
-      padding: 12px 16px;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.2);
       border-radius: 10px;
-      color: #fff;
-      font-size: 15px;
-      margin-bottom: 12px;
-      text-transform: uppercase;
-      text-align: center;
-      letter-spacing: 4px;
-      font-weight: 800;
+      margin-bottom: 6px;
+      animation: slideIn 0.4s ease both;
     }
-    .join-box input:focus { outline: none; border-color: #FF6600; }
-    .join-box button {
-      width: 100%;
-      padding: 14px;
-      background: linear-gradient(135deg, #FF6600, #e55a00);
-      border: none;
-      border-radius: 12px;
-      color: #fff;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
+    .result-rank { width: 28px; font-size: 14px; color: #aaa; text-align: center; font-weight: 700; }
+    .result-name { flex: 1; font-weight: 600; font-size: 15px; }
+    .result-score { font-weight: 900; color: #FF6600; font-size: 16px; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .header { padding: 10px 16px; }
+      .screen { padding: 16px; }
+      .options-grid-present { grid-template-columns: 1fr; }
+      .podium-block { width: 100px; }
+      .place-1 .podium-block { height: 120px; }
+      .place-2 .podium-block { height: 90px; }
+      .place-3 .podium-block { height: 70px; }
     }
   </style>
 </head>
@@ -466,100 +645,108 @@
 <!-- Particles -->
 <div id="particles"></div>
 
-<!-- Confetti -->
-<canvas id="confetti"></canvas>
-
-<!-- Join Overlay -->
-<div id="joinOverlay">
-  <div class="join-box">
-    <h2>🐢 PollWave</h2>
-    <p>Raum-Code eingeben um zu starten</p>
-    <input type="text" id="codeInput" placeholder="ABC123" maxlength="6" />
-    <button onclick="joinPresenter()">📺 Präsentation starten</button>
-  </div>
-</div>
-
-<!-- Top Bar -->
-<div class="top-bar" id="topBar" style="display:none">
+<!-- Header -->
+<div class="header">
   <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Galaxus_logo.svg/1200px-Galaxus_logo.svg.png" alt="Galaxus" />
-  <span class="quiz-title" id="topQuizTitle">PollWave Quiz</span>
-  <span class="room-pill" id="topRoomCode">------</span>
-</div>
-
-<!-- WAITING -->
-<div class="screen" id="waitScreen">
-  <div class="wait-logo">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Galaxus_logo.svg/1200px-Galaxus_logo.svg.png" alt="Galaxus" />
-  </div>
-  <div class="wait-title" id="waitTitle">PollWave Quiz</div>
-  <div class="wait-subtitle">Bereit für das Quiz? 🚀</div>
-  <div class="join-info">
-    <div class="qr-wrap" id="waitQR"></div>
-    <div class="join-details">
-      <div class="join-url" id="waitUrl"></div>
-      <div class="join-code" id="waitCode">------</div>
-      <div class="join-code-label">Raum-Code</div>
-      <div class="player-count" id="waitPlayers">👥 0 Spieler bereit</div>
-    </div>
+  <div class="header-title" id="headerTitle">PollWave</div>
+  <div class="header-room">
+    <span class="player-count-badge" id="playerCountBadge">👥 0 Spieler</span>
+    <span class="room-code-badge" id="roomCodeBadge">------</span>
+    <button id="btnNextQuestion" onclick="presenterNextQuestion()">⏭ Nächste Frage</button>
   </div>
 </div>
 
-<!-- QUESTION -->
+<!-- WAITING SCREEN -->
+<div class="screen active" id="waitingScreen">
+  <div class="quiz-name" id="waitingQuizName">PollWave Quiz</div>
+  <div class="join-info">Scanne den QR-Code oder gib den Code ein</div>
+  <div class="qr-container">
+    <img id="waitingQR" src="" alt="QR Code" width="220" height="220" />
+  </div>
+  <div class="join-url" id="waitingUrl">pollwave.onrender.com</div>
+  <div class="waiting-players">
+    <span id="waitingPlayerCount">0</span> Spieler bereit
+  </div>
+</div>
+
+<!-- QUESTION SCREEN -->
 <div class="screen" id="questionScreen">
-  <div class="question-wrap">
-    <div class="question-header-row">
-      <div class="q-counter" id="qCounter">Frage 1/1</div>
-      <div class="q-text" id="qText">Frage lädt…</div>
-      <div class="timer-wrap">
-        <div class="timer-circle">
-          <svg width="100" height="100" viewBox="0 0 100 100">
-            <circle class="timer-bg" cx="50" cy="50" r="40"/>
-            <circle class="timer-progress" id="timerProgress" cx="50" cy="50" r="40"/>
-          </svg>
-          <div class="timer-number" id="timerNumber">30</div>
-        </div>
-      </div>
+  <div class="question-meta-bar">
+    <div class="q-index-badge" id="qIndexBadge">Frage 1/1</div>
+    <div class="countdown-wrap">
+      <svg viewBox="0 0 80 80">
+        <circle class="countdown-track" cx="40" cy="40" r="34"/>
+        <circle class="countdown-arc"  cx="40" cy="40" r="34" id="countdownArc"
+          stroke-dasharray="213.6" stroke-dashoffset="0"/>
+      </svg>
+      <div class="countdown-num" id="countdownNum">30</div>
     </div>
-
-    <img id="questionImage" class="question-image" style="display:none" />
-
-    <div class="options-grid" id="optionsGrid"></div>
-
-    <div class="answer-progress">
-      <span id="answerProgressText">0/0 geantwortet</span>
-      <div class="answer-progress-bar">
-        <div class="answer-progress-fill" id="answerProgressFill"></div>
-      </div>
-    </div>
-
-    <div class="presenter-btn-wrap" id="presenterBtnWrap">
-      <button class="btn-next-presenter" onclick="presenterNext()">⏭ Nächste Frage</button>
-    </div>
+    <div class="q-answers-badge" id="qAnswersBadge">0 / 0 Antworten</div>
+  </div>
+  <div class="question-content" id="questionContent">
+    <!-- Built dynamically -->
   </div>
 </div>
 
-<!-- PODIUM -->
-<div class="screen" id="podiumScreen">
-  <div class="podium-title">🏆 Das sind die Gewinner!</div>
-  <div class="podium-wrap" id="podiumWrap"></div>
-  <div class="podium-list" id="podiumList"></div>
+<!-- QUESTION END OVERLAY -->
+<div id="questionEndOverlay">
+  <div class="end-title">📊 Zwischenwertung</div>
+  <div class="mini-leaderboard" id="miniLeaderboard"></div>
+</div>
+
+<!-- PODIUM SCREEN -->
+<div id="podiumScreen">
+  <div class="confetti-wrap" id="confettiWrap"></div>
+  <div class="podium-title">🏆 Endergebnis</div>
+  <div class="podium-stage" id="podiumStage"></div>
+  <div class="full-results" id="fullResults"></div>
 </div>
 
 <script>
   const socket = io();
-  let roomCode   = '';
-  let isPresenter = true;
-  let maxTime = 30;
-  let totalPlayers = 0;
-  let currentOptions = [];
+  const params = new URLSearchParams(window.location.search);
+  const roomCode = (params.get('room') || '').toUpperCase();
 
-  const OPTION_ICONS  = ['🔴','🔵','🟡','🟢'];
+  let maxTime = 30;
+  let totalAnswers = 0;
+  let totalPlayers = 0;
+  let currentAnswerCounts = [];
+  let currentOptions = [];
+  let isPresenter = false;
+  let questionActive = false;
+
+  const OPTION_COLORS = ['#e74c3c','#3498db','#f1c40f','#2ecc71'];
+  const OPTION_LETTERS = ['A','B','C','D'];
+  const CIRCUMFERENCE = 213.6; // 2 * π * 34
+
+  // ── Init ──
+  function init() {
+    if (!roomCode) {
+      document.getElementById('waitingQuizName').textContent = '❌ Kein Raum angegeben';
+      return;
+    }
+    document.getElementById('roomCodeBadge').textContent = roomCode;
+
+    const joinUrl = `${window.location.origin}?code=${roomCode}`;
+    document.getElementById('waitingUrl').textContent = joinUrl;
+    document.getElementById('waitingQR').src =
+      `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(joinUrl)}`;
+
+    socket.emit('joinRoom', { code: roomCode, name: '__presenter__' });
+    spawnParticles();
+  }
+
+  // ── Presenter control ──
+  function presenterNextQuestion() {
+    if (!roomCode) return;
+    socket.emit('nextQuestion', { code: roomCode });
+  }
 
   // ── Particles ──
-  (function spawnParticles() {
+  function spawnParticles() {
     const container = document.getElementById('particles');
-    const colors = ['#FF6600','#4ECDC4','#FF8C00','#00BFA5'];
-    for (let i = 0; i < 20; i++) {
+    const colors = ['#FF6600','#4ECDC4','#FFD700','#e74c3c','#9b59b6'];
+    for (let i = 0; i < 25; i++) {
       const p = document.createElement('div');
       p.className = 'particle';
       const size = Math.random() * 8 + 4;
@@ -568,237 +755,307 @@
         left:${Math.random()*100}%;
         background:${colors[Math.floor(Math.random()*colors.length)]};
         animation-duration:${Math.random()*15+10}s;
-        animation-delay:-${Math.random()*20}s;
+        animation-delay:-${Math.random()*15}s;
       `;
       container.appendChild(p);
     }
-  })();
-
-  // ── Join ──
-  function joinPresenter() {
-    const code = document.getElementById('codeInput').value.trim().toUpperCase();
-    if (code.length !== 6) return alert('Bitte 6-stelligen Code eingeben');
-    roomCode = code;
-    socket.emit('joinRoom', { code, name: '__presenter__' });
   }
 
-  socket.on('joinedAsPresenter', ({ quizName, state, playerCount }) => {
-    document.getElementById('joinOverlay').style.display = 'none';
-    document.getElementById('topBar').style.display = 'flex';
-    document.getElementById('topRoomCode').textContent = roomCode;
-    document.getElementById('topQuizTitle').textContent = quizName || 'PollWave Quiz';
-
-    const url = `${window.location.origin}?code=${roomCode}`;
-    document.getElementById('waitTitle').textContent  = quizName || 'PollWave Quiz';
-    document.getElementById('waitCode').textContent   = roomCode;
-    document.getElementById('waitUrl').textContent    = window.location.origin;
-    document.getElementById('waitPlayers').textContent = `👥 ${playerCount} Spieler bereit`;
-    document.getElementById('waitQR').innerHTML =
-      `<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(url)}" />`;
-
-    showScreen('waitScreen');
-    totalPlayers = playerCount;
-  });
-
-  socket.on('error', ({ message }) => alert(message));
-
-  // ── Screens ──
+  // ── Screen Management ──
   function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
+    const el = document.getElementById(id);
+    if (el) el.classList.add('active');
   }
 
-  // ── Player count ──
-  socket.on('playerJoined', ({ playerCount }) => {
-    totalPlayers = playerCount;
-    document.getElementById('waitPlayers').textContent = `👥 ${playerCount} Spieler bereit`;
-  });
-  socket.on('playerLeft', ({ playerCount }) => {
-    totalPlayers = playerCount;
-  });
+  // ── Build Question Layout ──
+  function buildQuestionLayout(data) {
+    const { question, options, image, imagePosition, imageSize, imageFit } = data;
+    const content = document.getElementById('questionContent');
+    content.innerHTML = '';
 
-  // ── Quiz Name Update ──
-  socket.on('quizNameUpdated', ({ quizName }) => {
-    document.getElementById('topQuizTitle').textContent = quizName;
-    document.getElementById('waitTitle').textContent    = quizName;
-  });
+    // Determine layout
+    const pos  = imagePosition || 'right';
+    const size = imageSize     || 'medium';
+    const fit  = imageFit      || 'cover';
 
-  // ── Game Started ──
-  socket.on('gameStarted', ({ quizName }) => {
-    document.getElementById('topQuizTitle').textContent = quizName || 'PollWave Quiz';
-    document.getElementById('waitTitle').textContent    = quizName || 'PollWave Quiz';
-    hidePresentBtn();
-  });
+    const optionsHTML = buildOptionsHTML(options);
 
-  // ── New Question ──
-  socket.on('newQuestion', ({ index, total, question, options, image, time }) => {
-    maxTime = time;
-    currentOptions = options;
-    showScreen('questionScreen');
-    hidePresentBtn();
+    if (!image) {
+      // No image layout
+      content.innerHTML = `
+        <div class="layout-no-image">
+          <div class="question-text-box" style="margin-bottom:16px">
+            <div class="question-text">${escHtml(question)}</div>
+          </div>
+          <div class="options-area">
+            <div class="options-grid-present" id="optionsGrid">${optionsHTML}</div>
+          </div>
+        </div>`;
+    } else if (pos === 'background') {
+      // Background image
+      content.innerHTML = `
+        <div class="layout-with-image layout-image-background" style="height:100%">
+          <div class="image-panel img-fit-${fit}">
+            <img src="${image}" alt="" />
+            <div style="position:absolute;inset:0;background:rgba(0,0,0,0.55)"></div>
+          </div>
+          <div class="question-text-box" style="margin-bottom:16px">
+            <div class="question-text">${escHtml(question)}</div>
+          </div>
+          <div class="options-area">
+            <div class="options-grid-present" id="optionsGrid">${optionsHTML}</div>
+          </div>
+        </div>`;
+    } else {
+      // Directional layout
+      const layoutClass = `layout-image-${pos}`;
+      const isHorizontal = pos === 'left' || pos === 'right';
 
-    document.getElementById('qCounter').textContent = `Frage ${index+1} / ${total}`;
-    document.getElementById('qText').textContent    = question;
-
-    const img = document.getElementById('questionImage');
-    if (image) { img.src = image; img.style.display = 'block'; }
-    else        { img.style.display = 'none'; }
-
-    // Timer reset
-    setTimer(time, time);
-
-    // Options
-    const grid = document.getElementById('optionsGrid');
-    grid.innerHTML = options.map((opt, i) => `
-      <div class="option-card opt-${i}" id="opt_${i}">
-        <div class="option-bar" id="bar_${i}"></div>
-        <div class="option-icon">${OPTION_ICONS[i]}</div>
-        <div class="option-text">${opt}</div>
-        <div class="option-count" id="cnt_${i}">0</div>
-      </div>`).join('');
-
-    // Progress reset
-    document.getElementById('answerProgressText').textContent = `0/${totalPlayers} geantwortet`;
-    document.getElementById('answerProgressFill').style.width = '0%';
-  });
-
-  // ── Timer ──
-  socket.on('timerUpdate', ({ timeLeft, maxTime: mt }) => {
-    setTimer(timeLeft, mt);
-  });
-
-  function setTimer(timeLeft, max) {
-    const circumference = 251;
-    const offset = circumference * (1 - timeLeft / max);
-    const progress = document.getElementById('timerProgress');
-    progress.style.strokeDashoffset = offset;
-    progress.style.stroke = timeLeft <= 5 ? '#e74c3c' : timeLeft <= 10 ? '#f1c40f' : '#FF6600';
-    document.getElementById('timerNumber').textContent = timeLeft;
-    document.getElementById('timerNumber').style.color = timeLeft <= 5 ? '#e74c3c' : timeLeft <= 10 ? '#f1c40f' : '#FF6600';
-  }
-
-  // ── Answer Update ──
-  socket.on('answerUpdate', ({ answerCounts, totalAnswers, totalPlayers: tp }) => {
-    if (tp) totalPlayers = tp;
-    const total = answerCounts.reduce((a,b) => a+b, 0);
-    answerCounts.forEach((count, i) => {
-      const pct = total > 0 ? (count / total * 100) : 0;
-      const bar = document.getElementById(`bar_${i}`);
-      const cnt = document.getElementById(`cnt_${i}`);
-      if (bar) bar.style.width = pct + '%';
-      if (cnt) cnt.textContent = count;
-    });
-    const pct = totalPlayers > 0 ? (totalAnswers / totalPlayers * 100) : 0;
-    document.getElementById('answerProgressText').textContent = `${totalAnswers}/${totalPlayers} geantwortet`;
-    document.getElementById('answerProgressFill').style.width = pct + '%';
-  });
-
-  // ── Question End ──
-  socket.on('questionEnd', ({ correctAnswer }) => {
-    for (let i = 0; i < currentOptions.length; i++) {
-      const card = document.getElementById(`opt_${i}`);
-      if (card) card.classList.add(i === correctAnswer ? 'correct' : 'wrong');
+      content.innerHTML = `
+        <div class="layout-with-image ${layoutClass}" style="height:100%">
+          <div class="image-panel img-size-${size} img-fit-${fit}">
+            <img src="${image}" alt="" />
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; min-width:0; min-height:0; gap:12px;">
+            <div class="question-text-box">
+              <div class="question-text">${escHtml(question)}</div>
+            </div>
+            <div class="options-area">
+              <div class="options-grid-present" id="optionsGrid">${optionsHTML}</div>
+            </div>
+          </div>
+        </div>`;
     }
-    showPresentBtn();
-  });
-
-  // ── Presenter Next ──
-  function presenterNext() {
-    socket.emit('nextQuestion', { code: roomCode });
-    hidePresentBtn();
   }
 
-  function showPresentBtn() {
-    document.getElementById('presenterBtnWrap').classList.add('visible');
-  }
-  function hidePresentBtn() {
-    document.getElementById('presenterBtnWrap').classList.remove('visible');
+  function buildOptionsHTML(options) {
+    return options.map((opt, i) => `
+      <div class="option-bar" id="optBar_${i}">
+        <div class="option-bg" style="background:${OPTION_COLORS[i]}"></div>
+        <div class="option-fill" id="optFill_${i}"></div>
+        <div class="option-inner">
+          <div class="option-letter">${OPTION_LETTERS[i]}</div>
+          <div class="option-text">${escHtml(opt)}</div>
+          <div class="option-count" id="optCount_${i}">0</div>
+        </div>
+      </div>`).join('');
   }
 
-  // ── Game Finished ──
-  socket.on('gameFinished', ({ players }) => {
-    showScreen('podiumScreen');
-    hidePresentBtn();
-    buildPodium(players);
-    startConfetti();
-  });
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  // ── Countdown ──
+  function updateCountdown(timeLeft, maxT) {
+    const arc = document.getElementById('countdownArc');
+    const num = document.getElementById('countdownNum');
+    if (!arc || !num) return;
+    const pct = timeLeft / maxT;
+    arc.style.strokeDashoffset = CIRCUMFERENCE * (1 - pct);
+    arc.style.stroke = pct > 0.5 ? '#FF6600' : pct > 0.25 ? '#f1c40f' : '#e74c3c';
+    num.style.color  = pct > 0.5 ? '#FF6600' : pct > 0.25 ? '#f1c40f' : '#e74c3c';
+    num.textContent  = timeLeft;
+  }
+
+  // ── Update Answer Bars ──
+  function updateAnswerBars(counts, total) {
+    const maxCount = Math.max(1, ...counts);
+    counts.forEach((c, i) => {
+      const fill  = document.getElementById(`optFill_${i}`);
+      const count = document.getElementById(`optCount_${i}`);
+      if (fill)  fill.style.width  = `${(c / maxCount) * 100}%`;
+      if (count) count.textContent = c;
+    });
+    document.getElementById('qAnswersBadge').textContent =
+      `${total} / ${totalPlayers} Antworten`;
+  }
+
+  // ── Reveal correct/wrong ──
+  function revealAnswers(correctIndex) {
+    currentOptions.forEach((_, i) => {
+      const bar = document.getElementById(`optBar_${i}`);
+      if (!bar) return;
+      if (i === correctIndex) bar.classList.add('correct');
+      else bar.classList.add('wrong');
+    });
+  }
+
+  // ── Mini Leaderboard (after each question) ──
+  function showQuestionEnd(stats, correctIndex) {
+    // First reveal answers on question screen
+    revealAnswers(correctIndex);
+    questionActive = false;
+    document.getElementById('btnNextQuestion').classList.toggle('visible', isPresenter);
+
+    setTimeout(() => {
+      const sorted = [...stats].sort((a, b) => b.score - a.score).slice(0, 5);
+      const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+      document.getElementById('miniLeaderboard').innerHTML = sorted.map((p, i) => `
+        <div class="lb-row" style="animation-delay:${i * 0.1}s">
+          <div class="lb-rank-icon">${medals[i] || i+1}</div>
+          <div class="lb-name">${escHtml(p.name)}</div>
+          <div class="lb-pts">${p.score} Pts</div>
+        </div>`).join('');
+      document.getElementById('questionEndOverlay').classList.add('active');
+    }, 1500);
+  }
 
   // ── Podium ──
-  function buildPodium(players) {
-    const wrap = document.getElementById('podiumWrap');
-    const list = document.getElementById('podiumList');
-    const medals = ['🥇','🥈','🥉'];
-    const initials = name => name.slice(0,2).toUpperCase();
+  function showPodium(players) {
+    document.getElementById('questionEndOverlay').classList.remove('active');
 
-    const top3 = [players[1], players[0], players[2]].filter(Boolean);
-    const placeClass = (p) => {
-      const rank = players.indexOf(p);
-      return `place-${rank+1}`;
-    };
+    // Build podium (1st, 2nd, 3rd)
+    // Display order: 2nd, 1st, 3rd
+    const top3 = players.slice(0, 3);
+    const displayOrder = [];
+    if (top3[1]) displayOrder.push({ player: top3[1], place: 2, delay: '0.2s' });
+    if (top3[0]) displayOrder.push({ player: top3[0], place: 1, delay: '0.4s' });
+    if (top3[2]) displayOrder.push({ player: top3[2], place: 3, delay: '0.1s' });
 
-    wrap.innerHTML = [players[1], players[0], players[2]].map((p, idx) => {
-      if (!p) return '';
-      const rank = players.indexOf(p) + 1;
-      return `
-        <div class="podium-place place-${rank}">
-          <div class="podium-avatar">${initials(p.name)}</div>
-          <div class="podium-name">${p.name}</div>
-          <div class="podium-score">${p.score} Pts</div>
-          <div class="podium-block">${medals[rank-1]||''}</div>
-        </div>`;
-    }).join('');
+    const placeEmojis = { 1: '🥇', 2: '🥈', 3: '🥉' };
+    const placeInitials = (name) => name ? name.charAt(0).toUpperCase() : '?';
 
-    list.innerHTML = players.slice(3).map((p, i) => `
-      <div class="podium-row">
-        <div class="rank">${i+4}</div>
-        <div class="p-name">${p.name}</div>
-        <div class="p-score">${p.score} Pts</div>
+    document.getElementById('podiumStage').innerHTML = displayOrder.map(({ player, place, delay }) => `
+      <div class="podium-place place-${place}" style="animation-delay:${delay}">
+        <div class="podium-avatar" style="animation-delay:${delay}">${placeInitials(player.name)}</div>
+        <div class="podium-player-name">${escHtml(player.name)}</div>
+        <div class="podium-player-score">${player.score} Pts</div>
+        <div class="podium-block" style="animation-delay:${delay}">${placeEmojis[place]}</div>
       </div>`).join('');
-  }
 
-  // ── Game Reset ──
-  socket.on('gameReset', () => {
-    hidePresentBtn();
-    showScreen('waitScreen');
-  });
+    // Full results list (4th and below)
+    const rest = players.slice(3);
+    document.getElementById('fullResults').innerHTML = rest.map((p, i) => `
+      <div class="result-row" style="animation-delay:${i * 0.08}s">
+        <div class="result-rank">${i + 4}</div>
+        <div class="result-name">${escHtml(p.name)}</div>
+        <div class="result-score">${p.score} Pts</div>
+      </div>`).join('');
+
+    // Show podium screen
+    document.getElementById('podiumScreen').classList.add('active');
+    document.getElementById('btnNextQuestion').classList.remove('visible');
+    spawnConfetti();
+  }
 
   // ── Confetti ──
-  function startConfetti() {
-    const canvas = document.getElementById('confetti');
-    const ctx    = canvas.getContext('2d');
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const pieces = Array.from({ length: 150 }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height - canvas.height,
-      w: Math.random() * 12 + 6,
-      h: Math.random() * 6 + 4,
-      color: ['#FF6600','#4ECDC4','#FFD700','#FF8C00','#00BFA5'][Math.floor(Math.random()*5)],
-      speed: Math.random() * 4 + 2,
-      angle: Math.random() * 360,
-      spin:  (Math.random() - 0.5) * 4
-    }));
-
-    let frame;
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      pieces.forEach(p => {
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.angle * Math.PI / 180);
-        ctx.fillStyle = p.color;
-        ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
-        ctx.restore();
-        p.y     += p.speed;
-        p.angle += p.spin;
-        if (p.y > canvas.height) { p.y = -20; p.x = Math.random() * canvas.width; }
-      });
-      frame = requestAnimationFrame(draw);
+  function spawnConfetti() {
+    const wrap = document.getElementById('confettiWrap');
+    const colors = ['#FF6600','#FFD700','#4ECDC4','#e74c3c','#9b59b6','#fff'];
+    wrap.innerHTML = '';
+    for (let i = 0; i < 80; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti-piece';
+      c.style.cssText = `
+        left:${Math.random()*100}%;
+        background:${colors[Math.floor(Math.random()*colors.length)]};
+        animation-duration:${Math.random()*3+2}s;
+        animation-delay:${Math.random()*3}s;
+        width:${Math.random()*10+5}px;
+        height:${Math.random()*10+5}px;
+        border-radius:${Math.random()>0.5?'50%':'2px'};
+      `;
+      wrap.appendChild(c);
     }
-    draw();
-    setTimeout(() => { cancelAnimationFrame(frame); ctx.clearRect(0,0,canvas.width,canvas.height); }, 6000);
   }
+
+  // ── Socket Events ──
+  socket.on('joinedAsPresenter', ({ quizName, state, playerCount }) => {
+    isPresenter = true;
+    document.getElementById('waitingQuizName').textContent = quizName || 'PollWave Quiz';
+    document.getElementById('headerTitle').textContent = quizName || 'PollWave';
+    document.getElementById('waitingPlayerCount').textContent = playerCount || 0;
+    document.getElementById('playerCountBadge').textContent = `👥 ${playerCount || 0} Spieler`;
+  });
+
+  socket.on('playerJoined', ({ playerCount }) => {
+    document.getElementById('waitingPlayerCount').textContent = playerCount;
+    document.getElementById('playerCountBadge').textContent = `👥 ${playerCount} Spieler`;
+  });
+
+  socket.on('playerLeft', ({ playerCount }) => {
+    document.getElementById('playerCountBadge').textContent = `👥 ${playerCount} Spieler`;
+  });
+
+  socket.on('quizNameUpdated', ({ quizName }) => {
+    document.getElementById('waitingQuizName').textContent = quizName;
+    document.getElementById('headerTitle').textContent = quizName;
+  });
+
+  socket.on('gameStarted', ({ quizName }) => {
+    if (quizName) {
+      document.getElementById('headerTitle').textContent = quizName;
+    }
+    document.getElementById('questionEndOverlay').classList.remove('active');
+  });
+
+  socket.on('newQuestion', (data) => {
+    const { index, total, question, options, image, imagePosition, imageSize, imageFit, time } = data;
+
+    maxTime = time || 30;
+    currentOptions = options;
+    currentAnswerCounts = new Array(options.length).fill(0);
+    totalAnswers = 0;
+    questionActive = true;
+
+    // Hide overlays
+    document.getElementById('questionEndOverlay').classList.remove('active');
+    document.getElementById('podiumScreen').classList.remove('active');
+
+    // Update meta bar
+    document.getElementById('qIndexBadge').textContent = `Frage ${index + 1} / ${total}`;
+    document.getElementById('qAnswersBadge').textContent = `0 / ${totalPlayers} Antworten`;
+    updateCountdown(maxTime, maxTime);
+
+    // Build layout
+    buildQuestionLayout({ question, options, image, imagePosition, imageSize, imageFit });
+
+    // Show question screen
+    showScreen('questionScreen');
+
+    // Next button: show only when question is live + presenter
+    document.getElementById('btnNextQuestion').classList.toggle('visible', isPresenter);
+  });
+
+  socket.on('timerUpdate', ({ timeLeft, maxTime: mt }) => {
+    maxTime = mt || maxTime;
+    updateCountdown(timeLeft, maxTime);
+  });
+
+  socket.on('answerUpdate', ({ answerCounts, totalAnswers: ta, totalPlayers: tp }) => {
+    totalPlayers = tp;
+    totalAnswers = ta;
+    currentAnswerCounts = answerCounts;
+    updateAnswerBars(answerCounts, ta);
+  });
+
+  socket.on('questionEnd', ({ correctAnswer, stats, answerCounts }) => {
+    if (answerCounts) {
+      currentAnswerCounts = answerCounts;
+      updateAnswerBars(answerCounts, totalAnswers);
+    }
+    showQuestionEnd(stats, correctAnswer);
+  });
+
+  socket.on('gameFinished', ({ players }) => {
+    showPodium(players);
+  });
+
+  socket.on('gameReset', () => {
+    document.getElementById('podiumScreen').classList.remove('active');
+    document.getElementById('questionEndOverlay').classList.remove('active');
+    document.getElementById('btnNextQuestion').classList.remove('visible');
+    questionActive = false;
+    showScreen('waitingScreen');
+  });
+
+  // ── Start ──
+  init();
 </script>
 </body>
 </html>
