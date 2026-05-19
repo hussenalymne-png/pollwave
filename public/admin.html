@@ -16,7 +16,6 @@
             min-height: 100vh;
         }
 
-        /* LOGIN */
         .login-screen {
             display: flex;
             align-items: center;
@@ -30,14 +29,39 @@
             border-radius: 20px;
             padding: 50px 40px;
             text-align: center;
-            width: 400px;
+            width: 420px;
             border: 1px solid rgba(255,255,255,0.2);
         }
 
         .login-card h1 { font-size: 2em; margin-bottom: 10px; }
         .login-card p { opacity: 0.7; margin-bottom: 30px; }
 
-        /* DASHBOARD */
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid rgba(255,255,255,0.2);
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: #e94560;
+            border-color: #e94560;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
         .dashboard { display: none; }
 
         .header {
@@ -46,6 +70,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .header h1 { font-size: 1.5em; }
@@ -53,7 +79,8 @@
         .header-info {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
+            flex-wrap: wrap;
         }
 
         .room-code-display {
@@ -75,6 +102,20 @@
         .status-badge.waiting { background: #f39c12; }
         .status-badge.playing { background: #2ecc71; }
         .status-badge.finished { background: #e74c3c; }
+
+        .presenter-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.4);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+
+        .presenter-btn:hover { background: rgba(255,255,255,0.3); }
 
         .main-content {
             display: grid;
@@ -101,7 +142,6 @@
             gap: 8px;
         }
 
-        /* QR Code Panel */
         .qr-container {
             display: flex;
             flex-direction: column;
@@ -138,7 +178,6 @@
 
         .copy-btn:hover { opacity: 0.8; }
 
-        /* Controls */
         .control-btn {
             width: 100%;
             padding: 15px;
@@ -158,7 +197,6 @@
         .btn-next { background: linear-gradient(135deg, #3498db, #2980b9); color: white; }
         .btn-reset { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
 
-        /* Spieler Liste */
         .player-count {
             font-size: 2em;
             font-weight: bold;
@@ -184,7 +222,6 @@
             gap: 8px;
         }
 
-        /* Timer */
         .admin-timer {
             text-align: center;
             margin: 10px 0;
@@ -196,10 +233,7 @@
             color: #e94560;
         }
 
-        /* Antwort Stats */
-        .stats-bar {
-            margin: 8px 0;
-        }
+        .stats-bar { margin: 8px 0; }
 
         .stats-bar-label {
             display: flex;
@@ -221,7 +255,6 @@
             transition: width 0.5s ease;
         }
 
-        /* Fragen Liste */
         .questions-header {
             display: flex;
             justify-content: space-between;
@@ -258,15 +291,9 @@
             gap: 10px;
         }
 
-        .question-item-text {
-            font-weight: bold;
-            flex: 1;
-        }
+        .question-item-text { font-weight: bold; flex: 1; }
 
-        .question-item-actions {
-            display: flex;
-            gap: 8px;
-        }
+        .question-item-actions { display: flex; gap: 8px; }
 
         .edit-btn, .delete-btn {
             padding: 5px 12px;
@@ -299,7 +326,15 @@
             border: 1px solid #2ecc71;
         }
 
-        /* MODAL */
+        .question-timer-badge {
+            background: rgba(255,255,255,0.15);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-left: 8px;
+            white-space: nowrap;
+        }
+
         .modal-overlay {
             display: none;
             position: fixed;
@@ -317,21 +352,16 @@
             background: #1a1a2e;
             border-radius: 20px;
             padding: 35px;
-            width: 550px;
+            width: 560px;
             max-width: 95vw;
             max-height: 90vh;
             overflow-y: auto;
             border: 1px solid rgba(255,255,255,0.2);
         }
 
-        .modal h3 {
-            font-size: 1.3em;
-            margin-bottom: 25px;
-        }
+        .modal h3 { font-size: 1.3em; margin-bottom: 25px; }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+        .form-group { margin-bottom: 20px; }
 
         .form-group label {
             display: block;
@@ -341,6 +371,7 @@
         }
 
         .form-group input[type="text"],
+        .form-group input[type="number"],
         .form-group textarea {
             width: 100%;
             padding: 12px 15px;
@@ -354,7 +385,39 @@
         }
 
         .form-group input:focus,
-        .form-group textarea:focus {
+        .form-group textarea:focus { border-color: #e94560; }
+
+        .timer-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .timer-row input[type="number"] {
+            width: 100px;
+            text-align: center;
+        }
+
+        .timer-presets {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .timer-preset-btn {
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 2px solid rgba(255,255,255,0.2);
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.2s;
+        }
+
+        .timer-preset-btn:hover,
+        .timer-preset-btn.active {
+            background: #e94560;
             border-color: #e94560;
         }
 
@@ -387,7 +450,7 @@
         .option-label.c { background: #2ecc71; color: #000; }
         .option-label.d { background: #f39c12; color: #000; }
 
-        .option-row input {
+        .option-row input[type="text"] {
             flex: 1;
             padding: 10px 12px;
             border-radius: 8px;
@@ -397,9 +460,10 @@
             font-size: 0.95em;
             outline: none;
             margin: 0;
+            width: auto;
         }
 
-        .option-row input:focus { border-color: #e94560; }
+        .option-row input[type="text"]:focus { border-color: #e94560; }
 
         .correct-radio {
             width: 20px;
@@ -448,8 +512,9 @@
         .btn-save { background: #2ecc71; color: #000; }
         .btn-cancel { background: rgba(255,255,255,0.2); color: white; }
 
-        /* Input für Login etc */
-        input[type="text"], input[type="password"] {
+        input[type="text"],
+        input[type="password"],
+        input[type="number"] {
             width: 100%;
             padding: 14px 18px;
             border-radius: 10px;
@@ -485,14 +550,33 @@
             margin-top: 8px;
         }
 
-        /* Scrollbar */
+        .default-timer-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .default-timer-row label {
+            opacity: 0.7;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+
+        .default-timer-row input {
+            width: 80px;
+            margin: 0;
+            padding: 8px 12px;
+            text-align: center;
+        }
+
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
 
         @media (max-width: 768px) {
             .main-content { grid-template-columns: 1fr; }
-            .header { flex-direction: column; gap: 10px; }
+            .header { flex-direction: column; }
         }
     </style>
 </head>
@@ -505,8 +589,31 @@
         <h1>PollWave Admin</h1>
         <p>Melde dich an um fortzufahren</p>
 
-        <input type="password" id="passwordInput" placeholder="Passwort" />
-        <button class="btn-primary" onclick="adminLogin()">Anmelden</button>
+        <!-- Tabs -->
+        <div class="tab-buttons">
+            <button class="tab-btn active" onclick="switchTab('new')">Neu erstellen</button>
+            <button class="tab-btn" onclick="switchTab('rejoin')">Raum beitreten</button>
+        </div>
+
+        <!-- Neuer Raum -->
+        <div class="tab-content active" id="tabNew">
+            <input type="password" id="passwordInput" placeholder="Admin Passwort" />
+            <div class="default-timer-row">
+                <label>⏱ Standard-Timer:</label>
+                <input type="number" id="defaultTimerInput" value="20" min="10" max="120" />
+                <span style="opacity:0.6; font-size:0.9em">Sekunden</span>
+            </div>
+            <button class="btn-primary" onclick="adminLogin()">🚀 Neues Spiel erstellen</button>
+        </div>
+
+        <!-- Rejoin -->
+        <div class="tab-content" id="tabRejoin">
+            <input type="text" id="rejoinCodeInput" placeholder="Raumcode (z.B. ABC123)"
+                style="text-transform:uppercase; letter-spacing:3px" />
+            <input type="password" id="rejoinPasswordInput" placeholder="Admin Passwort" />
+            <button class="btn-primary" onclick="rejoinRoom()">🔄 Raum wiederbetreten</button>
+        </div>
+
         <p class="error-text" id="loginError"></p>
     </div>
 </div>
@@ -514,19 +621,20 @@
 <!-- DASHBOARD -->
 <div class="dashboard" id="dashboard">
 
-    <!-- Header -->
     <div class="header">
         <h1>🎮 PollWave Admin</h1>
         <div class="header-info">
             <div class="room-code-display" id="roomCodeDisplay">------</div>
             <div class="status-badge waiting" id="statusBadge">Wartet</div>
+            <a id="presenterLink" href="#" target="_blank" class="presenter-btn">
+                📺 Präsentation öffnen
+            </a>
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
 
-        <!-- QR Code & Link -->
+        <!-- QR Code -->
         <div class="panel">
             <h3>📱 Spieler einladen</h3>
             <div class="qr-container">
@@ -555,7 +663,9 @@
                 🔄 Zurücksetzen
             </button>
 
-            <div id="currentQuestionDisplay" style="margin-top:15px; opacity:0.7; font-size:0.9em; text-align:center"></div>
+            <div id="currentQuestionDisplay"
+                style="margin-top:15px; opacity:0.7; font-size:0.9em; text-align:center">
+            </div>
         </div>
 
         <!-- Spieler -->
@@ -571,14 +681,18 @@
             <div id="answerStats">
                 <p style="opacity:0.5; text-align:center">Warte auf Antworten...</p>
             </div>
-            <div id="answerProgress" style="margin-top:15px; text-align:center; opacity:0.7"></div>
+            <div id="answerProgress"
+                style="margin-top:15px; text-align:center; opacity:0.7">
+            </div>
         </div>
 
-        <!-- Fragen (volle Breite) -->
+        <!-- Fragen -->
         <div class="panel" style="grid-column: 1 / -1;">
             <div class="questions-header">
                 <h3>❓ Fragen</h3>
-                <button class="add-question-btn" onclick="openQuestionModal()">+ Frage hinzufügen</button>
+                <button class="add-question-btn" onclick="openQuestionModal()">
+                    + Frage hinzufügen
+                </button>
             </div>
             <div id="questionsList">
                 <p style="opacity:0.5; text-align:center">Noch keine Fragen hinzugefügt</p>
@@ -602,6 +716,22 @@
         <div class="form-group">
             <label>Frage *</label>
             <textarea id="questionText" rows="3" placeholder="Deine Frage..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>⏱ Zeit für diese Frage</label>
+            <div class="timer-row">
+                <input type="number" id="questionTimerInput"
+                    value="20" min="10" max="120" style="width:100px; margin:0" />
+                <span style="opacity:0.6; font-size:0.9em">Sekunden</span>
+            </div>
+            <div class="timer-presets" style="margin-top:10px">
+                <button class="timer-preset-btn" onclick="setTimerPreset(10)">10s</button>
+                <button class="timer-preset-btn" onclick="setTimerPreset(15)">15s</button>
+                <button class="timer-preset-btn active" onclick="setTimerPreset(20)">20s</button>
+                <button class="timer-preset-btn" onclick="setTimerPreset(30)">30s</button>
+                <button class="timer-preset-btn" onclick="setTimerPreset(60)">60s</button>
+            </div>
         </div>
 
         <div class="form-group">
@@ -632,431 +762,541 @@
 
         <div class="form-group">
             <label>Bild (optional)</label>
-            <div class="image-upload-area" onclick="document.getElementById('imageInput').click()">
+            <div class="image-upload-area"
+                onclick="document.getElementById('imageInput').click()">
                 <p>📷 Klicken zum Hochladen</p>
                 <p style="opacity:0.5; font-size:0.85em">Max 5MB • JPG, PNG, GIF</p>
                 <img id="imagePreview" class="image-preview" alt="Vorschau"/>
             </div>
-            <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)"/>
+            <input type="file" id="imageInput" accept="image/*"
+                style="display:none" onchange="handleImageUpload(event)"/>
         </div>
 
         <div class="modal-buttons">
-            <button class="modal-btn btn-cancel" onclick="closeQuestionModal()">Abbrechen</button>
-            <button class="modal-btn btn-save" onclick="saveQuestion()">💾 Speichern</button>
+            <button class="modal-btn btn-cancel" onclick="closeQuestionModal()">
+                Abbrechen
+            </button>
+            <button class="modal-btn btn-save" onclick="saveQuestion()">
+                💾 Speichern
+            </button>
         </div>
     </div>
 </div>
 
 <script>
-    const socket = io();
-    let roomCode = '';
-    let questions = [];
-    let editingQuestionId = null;
-    let currentImageUrl = null;
-    let gameState = 'waiting';
-    let currentQuestionIndex = 0;
-    let totalQuestions = 0;
+const socket = io();
+let roomCode = '';
+let questions = [];
+let editingQuestionId = null;
+let currentImageUrl = null;
+let gameState = 'waiting';
+let defaultTime = 20;
 
-    // ===== ADMIN LOGIN =====
-    function adminLogin() {
-        const password = document.getElementById('passwordInput').value;
-        if (!password) return;
-
-        socket.emit('adminLogin', { password }, (response) => {
-            if (!response) {
-                document.getElementById('loginError').textContent = 'Keine Antwort vom Server';
-                return;
-            }
-            if (response.success) {
-                createRoom();
-            } else {
-                document.getElementById('loginError').textContent = response.error || 'Fehler';
-            }
-        });
-    }
-
-    // ===== RAUM ERSTELLEN =====
-    function createRoom() {
-        socket.emit('createRoom', {}, (response) => {
-            if (!response || !response.success) {
-                document.getElementById('loginError').textContent = 'Raum konnte nicht erstellt werden';
-                return;
-            }
-
-            roomCode = response.code;
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
-
-            // Room Code anzeigen
-            document.getElementById('roomCodeDisplay').textContent = roomCode;
-
-            // Join Link
-            const joinUrl = `${window.location.origin}/?code=${roomCode}`;
-            document.getElementById('joinLinkDisplay').textContent = joinUrl;
-
-            // QR Code
-            new QRCode(document.getElementById('qrcode'), {
-                text: joinUrl,
-                width: 160,
-                height: 160,
-                colorDark: '#000000',
-                colorLight: '#ffffff'
-            });
-        });
-    }
-
-    // ===== LINK KOPIEREN =====
-    function copyLink() {
-        const link = `${window.location.origin}/?code=${roomCode}`;
-        navigator.clipboard.writeText(link).then(() => {
-            const btn = document.querySelector('.copy-btn');
-            btn.textContent = '✅ Kopiert!';
-            setTimeout(() => btn.textContent = '🔗 Link kopieren', 2000);
-        });
-    }
-
-    // Enter für Login
-    document.getElementById('passwordInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') adminLogin();
+// ===== TABS =====
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach((b, i) => {
+        b.classList.toggle('active', (tab === 'new' && i === 0) || (tab === 'rejoin' && i === 1));
     });
+    document.getElementById('tabNew').classList.toggle('active', tab === 'new');
+    document.getElementById('tabRejoin').classList.toggle('active', tab === 'rejoin');
+    document.getElementById('loginError').textContent = '';
+}
 
-    // ===== SPIELER LISTE =====
-    socket.on('playerJoined', (data) => {
-        const players = data.players;
-        document.getElementById('playerCount').textContent = players.length;
+// ===== ADMIN LOGIN =====
+function adminLogin() {
+    const password = document.getElementById('passwordInput').value;
+    defaultTime = parseInt(document.getElementById('defaultTimerInput').value) || 20;
+    if (!password) return;
 
-        const list = document.getElementById('playerList');
-        list.innerHTML = '';
-
-        players.forEach(p => {
-            const li = document.createElement('li');
-            li.innerHTML = `👤 ${escapeHtml(p.name)} <span style="margin-left:auto; color:#44ff88">${p.score} Pts</span>`;
-            list.appendChild(li);
-        });
-    });
-
-    // ===== SPIEL STARTEN =====
-    function startGame() {
-        if (questions.length === 0) {
-            alert('Bitte zuerst Fragen hinzufügen!');
+    socket.emit('adminLogin', { password }, (response) => {
+        if (!response) {
+            document.getElementById('loginError').textContent = 'Keine Antwort vom Server';
             return;
         }
+        if (response.success) {
+            createRoom(password);
+        } else {
+            document.getElementById('loginError').textContent = response.error || 'Fehler';
+        }
+    });
+}
 
-        socket.emit('startGame', {}, (response) => {
-            if (!response) return;
-            if (response.success) {
-                gameState = 'playing';
+// ===== RAUM ERSTELLEN =====
+function createRoom(password) {
+    socket.emit('createRoom', { password, defaultTime }, (response) => {
+        if (!response || !response.success) {
+            document.getElementById('loginError').textContent =
+                'Raum konnte nicht erstellt werden';
+            return;
+        }
+        roomCode = response.code;
+        showDashboard();
+    });
+}
+
+// ===== REJOIN =====
+function rejoinRoom() {
+    const code = document.getElementById('rejoinCodeInput').value.trim().toUpperCase();
+    const password = document.getElementById('rejoinPasswordInput').value;
+
+    if (!code || !password) {
+        document.getElementById('loginError').textContent = 'Bitte alle Felder ausfüllen';
+        return;
+    }
+
+    socket.emit('rejoinRoom', { code, password }, (response) => {
+        if (!response) {
+            document.getElementById('loginError').textContent = 'Keine Antwort vom Server';
+            return;
+        }
+        if (response.success) {
+            const game = response.game;
+            roomCode = game.code;
+            questions = game.questions || [];
+            defaultTime = game.defaultTime || 20;
+            gameState = game.state;
+
+            // UI wiederherstellen
+            showDashboard();
+            renderQuestions();
+
+            // Spieler laden
+            if (game.players && game.players.length > 0) {
+                document.getElementById('playerCount').textContent = game.players.length;
+                const list = document.getElementById('playerList');
+                list.innerHTML = '';
+                game.players.forEach(p => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `👤 ${escapeHtml(p.name)}
+                        <span style="margin-left:auto; color:#44ff88">${p.score} Pts</span>`;
+                    list.appendChild(li);
+                });
+            }
+
+            // Status wiederherstellen
+            if (game.state === 'playing') {
                 document.getElementById('statusBadge').textContent = 'Läuft';
                 document.getElementById('statusBadge').className = 'status-badge playing';
                 document.getElementById('startBtn').disabled = true;
                 document.getElementById('nextBtn').disabled = false;
                 document.getElementById('adminTimerDiv').style.display = 'block';
+                document.getElementById('currentQuestionDisplay').textContent =
+                    `Frage ${game.currentQuestion + 1} von ${game.questions.length}`;
+            } else if (game.state === 'finished') {
+                document.getElementById('statusBadge').textContent = 'Beendet';
+                document.getElementById('statusBadge').className = 'status-badge finished';
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('nextBtn').disabled = true;
+            }
+        } else {
+            document.getElementById('loginError').textContent = response.error || 'Fehler';
+        }
+    });
+}
+
+// ===== DASHBOARD ANZEIGEN =====
+function showDashboard() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    document.getElementById('roomCodeDisplay').textContent = roomCode;
+
+    const joinUrl = `${window.location.origin}/?code=${roomCode}`;
+    document.getElementById('joinLinkDisplay').textContent = joinUrl;
+
+    // Presenter Link
+    const presenterUrl = `${window.location.origin}/present.html?code=${roomCode}`;
+    document.getElementById('presenterLink').href = presenterUrl;
+
+    // QR Code (nur einmal generieren)
+    const qrDiv = document.getElementById('qrcode');
+    if (!qrDiv.hasChildNodes()) {
+        new QRCode(qrDiv, {
+            text: joinUrl,
+            width: 160,
+            height: 160,
+            colorDark: '#000000',
+            colorLight: '#ffffff'
+        });
+    }
+}
+
+// ===== LINK KOPIEREN =====
+function copyLink() {
+    const link = `${window.location.origin}/?code=${roomCode}`;
+    navigator.clipboard.writeText(link).then(() => {
+        const btn = document.querySelector('.copy-btn');
+        btn.textContent = '✅ Kopiert!';
+        setTimeout(() => btn.textContent = '🔗 Link kopieren', 2000);
+    });
+}
+
+// Enter für Login
+document.getElementById('passwordInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') adminLogin();
+});
+document.getElementById('rejoinPasswordInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') rejoinRoom();
+});
+
+// ===== SPIELER LISTE =====
+socket.on('playerJoined', (data) => {
+    const players = data.players;
+    document.getElementById('playerCount').textContent = players.length;
+    const list = document.getElementById('playerList');
+    list.innerHTML = '';
+    players.forEach(p => {
+        const li = document.createElement('li');
+        li.innerHTML = `👤 ${escapeHtml(p.name)}
+            <span style="margin-left:auto; color:#44ff88">${p.score} Pts</span>`;
+        list.appendChild(li);
+    });
+});
+
+// ===== SPIEL STARTEN =====
+function startGame() {
+    if (questions.length === 0) {
+        alert('Bitte zuerst Fragen hinzufügen!');
+        return;
+    }
+    socket.emit('startGame', {}, (response) => {
+        if (!response) return;
+        if (response.success) {
+            gameState = 'playing';
+            document.getElementById('statusBadge').textContent = 'Läuft';
+            document.getElementById('statusBadge').className = 'status-badge playing';
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('nextBtn').disabled = false;
+            document.getElementById('adminTimerDiv').style.display = 'block';
+        } else {
+            alert(response.error);
+        }
+    });
+}
+
+// ===== NÄCHSTE FRAGE =====
+function nextQuestion() {
+    socket.emit('nextQuestion', {}, (response) => {
+        if (!response) return;
+        if (response.finished) {
+            gameState = 'finished';
+            document.getElementById('statusBadge').textContent = 'Beendet';
+            document.getElementById('statusBadge').className = 'status-badge finished';
+            document.getElementById('nextBtn').disabled = true;
+        }
+    });
+}
+
+// ===== ZURÜCKSETZEN =====
+function resetGame() {
+    if (!confirm('Spiel wirklich zurücksetzen?')) return;
+    socket.emit('resetGame', {}, (response) => {
+        if (!response) return;
+        if (response.success) {
+            gameState = 'waiting';
+            document.getElementById('statusBadge').textContent = 'Wartet';
+            document.getElementById('statusBadge').className = 'status-badge waiting';
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('nextBtn').disabled = true;
+            document.getElementById('adminTimerDiv').style.display = 'none';
+            document.getElementById('adminLeaderboard').innerHTML = '';
+            document.getElementById('answerStats').innerHTML =
+                '<p style="opacity:0.5; text-align:center">Warte auf Antworten...</p>';
+            document.getElementById('currentQuestionDisplay').textContent = '';
+        }
+    });
+}
+
+// ===== GAME RESET EVENT =====
+socket.on('gameReset', () => {
+    gameState = 'waiting';
+    document.getElementById('statusBadge').textContent = 'Wartet';
+    document.getElementById('statusBadge').className = 'status-badge waiting';
+});
+
+// ===== TIMER UPDATE =====
+socket.on('timerUpdate', (data) => {
+    document.getElementById('adminTimerNumber').textContent = data.timeLeft;
+    const num = document.getElementById('adminTimerNumber');
+    if (data.timeLeft <= 5) num.style.color = '#ff4444';
+    else if (data.timeLeft <= 10) num.style.color = '#ffaa00';
+    else num.style.color = '#e94560';
+});
+
+// ===== NEUE FRAGE =====
+socket.on('newQuestion', (data) => {
+    document.getElementById('currentQuestionDisplay').textContent =
+        `Frage ${data.index + 1} von ${data.total}`;
+    document.getElementById('answerStats').innerHTML =
+        '<p style="opacity:0.5; text-align:center">Warte auf Antworten...</p>';
+    document.getElementById('answerProgress').textContent = '';
+    document.getElementById('adminTimerNumber').textContent = data.timeLeft;
+    document.getElementById('adminTimerNumber').style.color = '#e94560';
+});
+
+// ===== ANTWORT UPDATE =====
+socket.on('answerUpdate', (data) => {
+    const { stats, totalAnswers, totalPlayers } = data;
+    const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12'];
+    const labels = ['A', 'B', 'C', 'D'];
+    const statsDiv = document.getElementById('answerStats');
+    statsDiv.innerHTML = '';
+
+    Object.entries(stats).forEach(([index, count]) => {
+        const pct = totalPlayers > 0 ? Math.round((count / totalPlayers) * 100) : 0;
+        const bar = document.createElement('div');
+        bar.className = 'stats-bar';
+        bar.innerHTML = `
+            <div class="stats-bar-label">
+                <span>${labels[index]}</span>
+                <span>${count} (${pct}%)</span>
+            </div>
+            <div class="stats-bar-track">
+                <div class="stats-bar-fill"
+                    style="width:${pct}%; background:${colors[index]}">
+                </div>
+            </div>
+        `;
+        statsDiv.appendChild(bar);
+    });
+
+    document.getElementById('answerProgress').textContent =
+        `${totalAnswers} / ${totalPlayers} geantwortet`;
+});
+
+// ===== FRAGE ENDE =====
+socket.on('questionEnd', (data) => {
+    updateAdminLeaderboard(data.leaderboard);
+});
+
+// ===== SPIEL BEENDET =====
+socket.on('gameFinished', (data) => {
+    updateAdminLeaderboard(data.leaderboard);
+    gameState = 'finished';
+    document.getElementById('statusBadge').textContent = 'Beendet';
+    document.getElementById('statusBadge').className = 'status-badge finished';
+    document.getElementById('nextBtn').disabled = true;
+});
+
+function updateAdminLeaderboard(leaderboard) {
+    const list = document.getElementById('adminLeaderboard');
+    list.innerHTML = '';
+    const medals = ['🥇', '🥈', '🥉'];
+    leaderboard.forEach(player => {
+        const li = document.createElement('li');
+        const medal = medals[player.rank - 1] || `#${player.rank}`;
+        li.innerHTML = `
+            <span>${medal}</span>
+            <span style="margin-left:8px">${escapeHtml(player.name)}</span>
+            <span style="margin-left:auto; color:#44ff88; font-weight:bold">
+                ${player.score} Pts
+            </span>
+        `;
+        list.appendChild(li);
+    });
+}
+
+// ===== TIMER PRESET =====
+function setTimerPreset(seconds) {
+    document.getElementById('questionTimerInput').value = seconds;
+    document.querySelectorAll('.timer-preset-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.textContent) === seconds);
+    });
+}
+
+// ===== FRAGEN MODAL =====
+function openQuestionModal(questionId = null) {
+    editingQuestionId = questionId;
+    currentImageUrl = null;
+
+    document.getElementById('modalTitle').textContent =
+        questionId ? '✏️ Frage bearbeiten' : '➕ Frage hinzufügen';
+
+    document.getElementById('questionText').value = '';
+    document.getElementById('optionA').value = '';
+    document.getElementById('optionB').value = '';
+    document.getElementById('optionC').value = '';
+    document.getElementById('optionD').value = '';
+    document.getElementById('imagePreview').style.display = 'none';
+    document.getElementById('imageInput').value = '';
+    document.querySelectorAll('input[name="correct"]').forEach(r => r.checked = false);
+
+    // Timer auf default setzen
+    const timerVal = defaultTime || 20;
+    document.getElementById('questionTimerInput').value = timerVal;
+    document.querySelectorAll('.timer-preset-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.textContent) === timerVal);
+    });
+
+    if (questionId) {
+        const q = questions.find(q => q.id === questionId);
+        if (q) {
+            document.getElementById('questionText').value = q.text;
+            document.getElementById('optionA').value = q.options[0] || '';
+            document.getElementById('optionB').value = q.options[1] || '';
+            document.getElementById('optionC').value = q.options[2] || '';
+            document.getElementById('optionD').value = q.options[3] || '';
+
+            const radios = document.querySelectorAll('input[name="correct"]');
+            if (radios[q.correct]) radios[q.correct].checked = true;
+
+            const qTime = q.time || defaultTime || 20;
+            document.getElementById('questionTimerInput').value = qTime;
+            document.querySelectorAll('.timer-preset-btn').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.textContent) === qTime);
+            });
+
+            if (q.image) {
+                currentImageUrl = q.image;
+                const preview = document.getElementById('imagePreview');
+                preview.src = q.image;
+                preview.style.display = 'block';
+            }
+        }
+    }
+
+    document.getElementById('questionModal').classList.add('active');
+}
+
+function closeQuestionModal() {
+    document.getElementById('questionModal').classList.remove('active');
+    editingQuestionId = null;
+    currentImageUrl = null;
+}
+
+// ===== BILD UPLOAD =====
+async function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+        const response = await fetch('/upload', { method: 'POST', body: formData });
+        const data = await response.json();
+        if (data.url) {
+            currentImageUrl = data.url;
+            const preview = document.getElementById('imagePreview');
+            preview.src = data.url;
+            preview.style.display = 'block';
+        }
+    } catch (err) {
+        alert('Fehler beim Hochladen: ' + err.message);
+    }
+}
+
+// ===== FRAGE SPEICHERN =====
+function saveQuestion() {
+    const text = document.getElementById('questionText').value.trim();
+    const optA = document.getElementById('optionA').value.trim();
+    const optB = document.getElementById('optionB').value.trim();
+    const optC = document.getElementById('optionC').value.trim();
+    const optD = document.getElementById('optionD').value.trim();
+    const time = parseInt(document.getElementById('questionTimerInput').value) || defaultTime;
+
+    if (!text) { alert('Bitte Frage eingeben!'); return; }
+    if (!optA || !optB) { alert('Mindestens Antwort A und B eingeben!'); return; }
+
+    const correctRadio = document.querySelector('input[name="correct"]:checked');
+    if (!correctRadio) { alert('Bitte richtige Antwort auswählen!'); return; }
+
+    const correct = parseInt(correctRadio.value);
+    const options = [optA, optB, optC, optD];
+    const questionData = { text, options, correct, image: currentImageUrl, time };
+
+    if (editingQuestionId) {
+        socket.emit('editQuestion', { id: editingQuestionId, ...questionData }, (response) => {
+            if (!response) return;
+            if (response.success) {
+                const index = questions.findIndex(q => q.id === editingQuestionId);
+                if (index !== -1) questions[index] = response.question;
+                renderQuestions();
+                closeQuestionModal();
+            } else {
+                alert(response.error);
+            }
+        });
+    } else {
+        socket.emit('addQuestion', questionData, (response) => {
+            if (!response) return;
+            if (response.success) {
+                questions.push(response.question);
+                renderQuestions();
+                closeQuestionModal();
             } else {
                 alert(response.error);
             }
         });
     }
+}
 
-    // ===== NÄCHSTE FRAGE =====
-    function nextQuestion() {
-        socket.emit('nextQuestion', {}, (response) => {
-            if (!response) return;
-            if (response.finished) {
-                gameState = 'finished';
-                document.getElementById('statusBadge').textContent = 'Beendet';
-                document.getElementById('statusBadge').className = 'status-badge finished';
-                document.getElementById('nextBtn').disabled = true;
-            }
-        });
-    }
-
-    // ===== ZURÜCKSETZEN =====
-    function resetGame() {
-        if (!confirm('Spiel wirklich zurücksetzen?')) return;
-
-        socket.emit('resetGame', {}, (response) => {
-            if (!response) return;
-            if (response.success) {
-                gameState = 'waiting';
-                document.getElementById('statusBadge').textContent = 'Wartet';
-                document.getElementById('statusBadge').className = 'status-badge waiting';
-                document.getElementById('startBtn').disabled = false;
-                document.getElementById('nextBtn').disabled = true;
-                document.getElementById('adminTimerDiv').style.display = 'none';
-                document.getElementById('adminLeaderboard').innerHTML = '';
-                document.getElementById('answerStats').innerHTML = '<p style="opacity:0.5; text-align:center">Warte auf Antworten...</p>';
-            }
-        });
-    }
-
-    // ===== TIMER UPDATE =====
-    socket.on('timerUpdate', (data) => {
-        document.getElementById('adminTimerNumber').textContent = data.timeLeft;
-
-        const num = document.getElementById('adminTimerNumber');
-        if (data.timeLeft <= 5) num.style.color = '#ff4444';
-        else if (data.timeLeft <= 10) num.style.color = '#ffaa00';
-        else num.style.color = '#e94560';
-    });
-
-    // ===== NEUE FRAGE (ADMIN) =====
-    socket.on('newQuestion', (data) => {
-        currentQuestionIndex = data.index;
-        totalQuestions = data.total;
-        document.getElementById('currentQuestionDisplay').textContent =
-            `Frage ${data.index + 1} von ${data.total}`;
-        document.getElementById('answerStats').innerHTML = '<p style="opacity:0.5; text-align:center">Warte auf Antworten...</p>';
-        document.getElementById('answerProgress').textContent = '';
-    });
-
-    // ===== ANTWORT UPDATE =====
-    socket.on('answerUpdate', (data) => {
-        const { stats, totalAnswers, totalPlayers } = data;
-        const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12'];
-        const labels = ['A', 'B', 'C', 'D'];
-
-        const statsDiv = document.getElementById('answerStats');
-        statsDiv.innerHTML = '';
-
-        Object.entries(stats).forEach(([index, count]) => {
-            const pct = totalPlayers > 0 ? Math.round((count / totalPlayers) * 100) : 0;
-            const bar = document.createElement('div');
-            bar.className = 'stats-bar';
-            bar.innerHTML = `
-                <div class="stats-bar-label">
-                    <span>${labels[index]}</span>
-                    <span>${count} (${pct}%)</span>
-                </div>
-                <div class="stats-bar-track">
-                    <div class="stats-bar-fill" style="width:${pct}%; background:${colors[index]}"></div>
-                </div>
-            `;
-            statsDiv.appendChild(bar);
-        });
-
-        document.getElementById('answerProgress').textContent =
-            `${totalAnswers} / ${totalPlayers} geantwortet`;
-    });
-
-    // ===== FRAGE ENDE (ADMIN) =====
-    socket.on('questionEnd', (data) => {
-        const { leaderboard } = data;
-        updateAdminLeaderboard(leaderboard);
-    });
-
-    // ===== SPIEL BEENDET (ADMIN) =====
-    socket.on('gameFinished', (data) => {
-        updateAdminLeaderboard(data.leaderboard);
-        gameState = 'finished';
-        document.getElementById('statusBadge').textContent = 'Beendet';
-        document.getElementById('statusBadge').className = 'status-badge finished';
-        document.getElementById('nextBtn').disabled = true;
-    });
-
-    function updateAdminLeaderboard(leaderboard) {
-        const list = document.getElementById('adminLeaderboard');
-        list.innerHTML = '';
-        const medals = ['🥇', '🥈', '🥉'];
-
-        leaderboard.forEach(player => {
-            const li = document.createElement('li');
-            const medal = medals[player.rank - 1] || `#${player.rank}`;
-            li.innerHTML = `
-                <span>${medal}</span>
-                <span style="margin-left:8px">${escapeHtml(player.name)}</span>
-                <span style="margin-left:auto; color:#44ff88; font-weight:bold">${player.score} Pts</span>
-            `;
-            list.appendChild(li);
-        });
-    }
-
-    // ===== FRAGEN MODAL =====
-    function openQuestionModal(questionId = null) {
-        editingQuestionId = questionId;
-        currentImageUrl = null;
-
-        document.getElementById('modalTitle').textContent =
-            questionId ? '✏️ Frage bearbeiten' : '➕ Frage hinzufügen';
-
-        // Felder leeren
-        document.getElementById('questionText').value = '';
-        document.getElementById('optionA').value = '';
-        document.getElementById('optionB').value = '';
-        document.getElementById('optionC').value = '';
-        document.getElementById('optionD').value = '';
-        document.getElementById('imagePreview').style.display = 'none';
-        document.querySelectorAll('input[name="correct"]').forEach(r => r.checked = false);
-
-        // Wenn bearbeiten, Daten laden
-        if (questionId) {
-            const q = questions.find(q => q.id === questionId);
-            if (q) {
-                document.getElementById('questionText').value = q.text;
-                document.getElementById('optionA').value = q.options[0] || '';
-                document.getElementById('optionB').value = q.options[1] || '';
-                document.getElementById('optionC').value = q.options[2] || '';
-                document.getElementById('optionD').value = q.options[3] || '';
-
-                const radios = document.querySelectorAll('input[name="correct"]');
-                if (radios[q.correct]) radios[q.correct].checked = true;
-
-                if (q.image) {
-                    currentImageUrl = q.image;
-                    const preview = document.getElementById('imagePreview');
-                    preview.src = q.image;
-                    preview.style.display = 'block';
-                }
-            }
+// ===== FRAGE LÖSCHEN =====
+function deleteQuestion(id) {
+    if (!confirm('Frage wirklich löschen?')) return;
+    socket.emit('deleteQuestion', { id }, (response) => {
+        if (!response) return;
+        if (response.success) {
+            questions = questions.filter(q => q.id !== id);
+            renderQuestions();
         }
+    });
+}
 
-        document.getElementById('questionModal').classList.add('active');
+// ===== FRAGEN RENDERN =====
+function renderQuestions() {
+    const container = document.getElementById('questionsList');
+    if (questions.length === 0) {
+        container.innerHTML =
+            '<p style="opacity:0.5; text-align:center">Noch keine Fragen hinzugefügt</p>';
+        return;
     }
 
-    function closeQuestionModal() {
-        document.getElementById('questionModal').classList.remove('active');
-        editingQuestionId = null;
-        currentImageUrl = null;
-    }
+    const labels = ['A', 'B', 'C', 'D'];
+    container.innerHTML = '';
 
-    // ===== BILD UPLOAD =====
-    async function handleImageUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const formData = new FormData();
-        formData.append('image', file);
-
-        try {
-            const response = await fetch('/upload', {
-                method: 'POST',
-                body: formData
-            });
-            const data = await response.json();
-
-            if (data.url) {
-                currentImageUrl = data.url;
-                const preview = document.getElementById('imagePreview');
-                preview.src = data.url;
-                preview.style.display = 'block';
-            }
-        } catch (err) {
-            alert('Fehler beim Hochladen: ' + err.message);
-        }
-    }
-
-    // ===== FRAGE SPEICHERN =====
-    function saveQuestion() {
-        const text = document.getElementById('questionText').value.trim();
-        const optA = document.getElementById('optionA').value.trim();
-        const optB = document.getElementById('optionB').value.trim();
-        const optC = document.getElementById('optionC').value.trim();
-        const optD = document.getElementById('optionD').value.trim();
-
-        if (!text) { alert('Bitte Frage eingeben!'); return; }
-        if (!optA || !optB) { alert('Bitte mindestens Antwort A und B eingeben!'); return; }
-
-        const correctRadio = document.querySelector('input[name="correct"]:checked');
-        if (!correctRadio) { alert('Bitte richtige Antwort auswählen!'); return; }
-
-        const correct = parseInt(correctRadio.value);
-        const options = [optA, optB, optC, optD];
-
-        const questionData = {
-            text,
-            options,
-            correct,
-            image: currentImageUrl
-        };
-
-        if (editingQuestionId) {
-            // Bearbeiten
-            socket.emit('editQuestion', { id: editingQuestionId, ...questionData }, (response) => {
-                if (!response) return;
-                if (response.success) {
-                    const index = questions.findIndex(q => q.id === editingQuestionId);
-                    if (index !== -1) questions[index] = response.question;
-                    renderQuestions();
-                    closeQuestionModal();
-                } else {
-                    alert(response.error);
-                }
-            });
-        } else {
-            // Hinzufügen
-            socket.emit('addQuestion', questionData, (response) => {
-                if (!response) return;
-                if (response.success) {
-                    questions.push(response.question);
-                    renderQuestions();
-                    closeQuestionModal();
-                } else {
-                    alert(response.error);
-                }
-            });
-        }
-    }
-
-    // ===== FRAGE LÖSCHEN =====
-    function deleteQuestion(id) {
-        if (!confirm('Frage wirklich löschen?')) return;
-
-        socket.emit('deleteQuestion', { id }, (response) => {
-            if (!response) return;
-            if (response.success) {
-                questions = questions.filter(q => q.id !== id);
-                renderQuestions();
-            }
-        });
-    }
-
-    // ===== FRAGEN RENDERN =====
-    function renderQuestions() {
-        const container = document.getElementById('questionsList');
-
-        if (questions.length === 0) {
-            container.innerHTML = '<p style="opacity:0.5; text-align:center">Noch keine Fragen hinzugefügt</p>';
-            return;
-        }
-
-        const labels = ['A', 'B', 'C', 'D'];
-        container.innerHTML = '';
-
-        questions.forEach((q, index) => {
-            const div = document.createElement('div');
-            div.className = 'question-item';
-            div.innerHTML = `
-                <div class="question-item-header">
-                    <span style="opacity:0.5; font-size:0.85em; margin-right:8px">${index + 1}.</span>
-                    <span class="question-item-text">${escapeHtml(q.text)}</span>
-                    <div class="question-item-actions">
-                        <button class="edit-btn" onclick="openQuestionModal(${q.id})">✏️ Bearbeiten</button>
-                        <button class="delete-btn" onclick="deleteQuestion(${q.id})">🗑️ Löschen</button>
-                    </div>
-                </div>
-                <div class="question-options">
-                    ${q.options.map((opt, i) => opt ? `
-                        <div class="question-option ${i === q.correct ? 'correct' : ''}">
-                            ${labels[i]}: ${escapeHtml(opt)} ${i === q.correct ? '✅' : ''}
-                        </div>
-                    ` : '').join('')}
-                </div>
-                ${q.image ? `<img src="${q.image}" style="max-height:80px; border-radius:6px; margin-top:10px">` : ''}
-            `;
-            container.appendChild(div);
-        });
-    }
-
-    // ===== HELPER =====
-    function escapeHtml(text) {
+    questions.forEach((q, index) => {
         const div = document.createElement('div');
-        div.appendChild(document.createTextNode(text || ''));
-        return div.innerHTML;
-    }
-
-    // Modal schließen wenn außerhalb geklickt
-    document.getElementById('questionModal').addEventListener('click', (e) => {
-        if (e.target === document.getElementById('questionModal')) closeQuestionModal();
+        div.className = 'question-item';
+        div.innerHTML = `
+            <div class="question-item-header">
+                <span style="opacity:0.5; font-size:0.85em; margin-right:8px">${index + 1}.</span>
+                <span class="question-item-text">${escapeHtml(q.text)}</span>
+                <span class="question-timer-badge">⏱ ${q.time || defaultTime}s</span>
+                <div class="question-item-actions">
+                    <button class="edit-btn" onclick="openQuestionModal(${q.id})">
+                        ✏️ Bearbeiten
+                    </button>
+                    <button class="delete-btn" onclick="deleteQuestion(${q.id})">
+                        🗑️ Löschen
+                    </button>
+                </div>
+            </div>
+            <div class="question-options">
+                ${q.options.map((opt, i) => opt ? `
+                    <div class="question-option ${i === q.correct ? 'correct' : ''}">
+                        ${labels[i]}: ${escapeHtml(opt)} ${i === q.correct ? '✅' : ''}
+                    </div>
+                ` : '').join('')}
+            </div>
+            ${q.image ? `
+                <img src="${q.image}"
+                    style="max-height:80px; border-radius:6px; margin-top:10px">
+            ` : ''}
+        `;
+        container.appendChild(div);
     });
+}
+
+// ===== HELPER =====
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(text || ''));
+    return div.innerHTML;
+}
+
+document.getElementById('questionModal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('questionModal')) closeQuestionModal();
+});
 </script>
 </body>
 </html>
