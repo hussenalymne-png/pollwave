@@ -18,7 +18,6 @@
       flex-direction: column;
     }
 
-    /* ── Header ── */
     .pres-header {
       background: linear-gradient(135deg, #1a1a2e, #16213e);
       padding: 10px 28px;
@@ -54,7 +53,6 @@
       border-radius: 20px;
     }
 
-    /* ── Main area ── */
     .pres-main {
       flex: 1;
       display: flex;
@@ -64,7 +62,7 @@
       min-height: 0;
     }
 
-    /* ── Screen Base ── */
+    /* ── Screen System ── */
     .screen {
       position: absolute;
       inset: 0;
@@ -76,7 +74,7 @@
       display: flex;
     }
 
-    /* ── Waiting Screen ── */
+    /* ── Waiting ── */
     #waitingScreen {
       align-items: center;
       justify-content: center;
@@ -102,18 +100,11 @@
     }
     .waiting-qr img { border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
     .waiting-url  { color: #aaa; font-size: 16px; margin-top: 8px; text-align: center; }
-    .waiting-players {
-      font-size: 22px;
-      color: #4ECDC4;
-      font-weight: 700;
-    }
+    .waiting-players { font-size: 22px; color: #4ECDC4; font-weight: 700; }
 
     /* ── Question Screen ── */
-    #questionScreen {
-      background: #0f0f1a;
-    }
+    #questionScreen { background: #0f0f1a; }
 
-    /* Progress bar */
     .progress-bar-wrap {
       height: 6px;
       background: rgba(255,255,255,0.1);
@@ -125,7 +116,6 @@
       transition: width 1s linear;
     }
 
-    /* Question layout */
     .q-layout {
       flex: 1;
       display: flex;
@@ -134,7 +124,6 @@
       min-height: 0;
     }
 
-    /* Content area */
     .q-content {
       flex: 1;
       display: flex;
@@ -144,12 +133,7 @@
       min-width: 0;
     }
 
-    /* Image panel */
-    .q-image-panel {
-      display: none;
-      flex-shrink: 0;
-      overflow: hidden;
-    }
+    .q-image-panel { display: none; flex-shrink: 0; overflow: hidden; }
     .q-image-panel.pos-left  { order: -1; width: 35%; }
     .q-image-panel.pos-right { order: 1;  width: 35%; }
     .q-image-panel.pos-left.size-small,
@@ -163,164 +147,99 @@
     .q-image-panel.fit-contain img { object-fit: contain; }
     .q-image-panel.fit-fill    img { object-fit: fill; }
 
-    /* Top/Bottom image */
-    .q-image-top, .q-image-bottom {
-      display: none;
-      width: 100%;
-      flex-shrink: 0;
-      overflow: hidden;
-    }
+    .q-image-top, .q-image-bottom { display: none; width: 100%; flex-shrink: 0; overflow: hidden; }
     .q-image-top    { height: 30%; }
     .q-image-bottom { height: 30%; }
-    .q-image-top.size-small,
-    .q-image-bottom.size-small  { height: 20%; }
-    .q-image-top.size-large,
-    .q-image-bottom.size-large  { height: 40%; }
+    .q-image-top.size-small,  .q-image-bottom.size-small  { height: 20%; }
+    .q-image-top.size-large,  .q-image-bottom.size-large  { height: 40%; }
     .q-image-top img, .q-image-bottom img { width: 100%; height: 100%; }
-    .q-image-top.fit-cover img,
-    .q-image-bottom.fit-cover img   { object-fit: cover; }
-    .q-image-top.fit-contain img,
-    .q-image-bottom.fit-contain img { object-fit: contain; }
-    .q-image-top.fit-fill img,
-    .q-image-bottom.fit-fill img    { object-fit: fill; }
+    .q-image-top.fit-cover img, .q-image-bottom.fit-cover img     { object-fit: cover; }
+    .q-image-top.fit-contain img, .q-image-bottom.fit-contain img { object-fit: contain; }
+    .q-image-top.fit-fill img, .q-image-bottom.fit-fill img       { object-fit: fill; }
 
-    /* Background image */
     .q-bg-image {
-      position: absolute;
-      inset: 0;
-      z-index: 0;
-      opacity: 0.15;
-      pointer-events: none;
+      position: absolute; inset: 0; z-index: 0;
+      opacity: 0.15; pointer-events: none;
     }
     .q-bg-image img { width: 100%; height: 100%; object-fit: cover; }
 
-    /* Question text */
     .q-text-area { position: relative; z-index: 1; flex-shrink: 0; }
     .q-index { font-size: 14px; color: #aaa; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
-    .q-text {
-      font-size: clamp(22px, 3.5vw, 42px);
-      font-weight: 800;
-      line-height: 1.25;
-      margin-bottom: 20px;
-    }
+    .q-text  { font-size: clamp(22px, 3.5vw, 42px); font-weight: 800; line-height: 1.25; margin-bottom: 20px; }
 
-    /* Timer */
     .q-timer-wrap {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 20px;
-      flex-shrink: 0;
-      position: relative;
-      z-index: 1;
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 20px; flex-shrink: 0; position: relative; z-index: 1;
     }
     .q-timer-svg  { flex-shrink: 0; }
     .q-timer-text { font-size: 28px; font-weight: 900; color: #FF6600; }
     .q-timer-sub  { font-size: 13px; color: #aaa; }
 
-    /* Answer options */
     .q-options {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
       flex: 1;
-      position: relative;
-      z-index: 1;
+      position: relative; z-index: 1;
       min-height: 0;
       align-content: stretch;
     }
     .q-option {
-      border-radius: 16px;
-      padding: 16px 20px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: clamp(14px, 2vw, 20px);
-      font-weight: 700;
-      position: relative;
-      overflow: hidden;
+      border-radius: 16px; padding: 16px 20px;
+      display: flex; align-items: center; gap: 12px;
+      font-size: clamp(14px, 2vw, 20px); font-weight: 700;
+      position: relative; overflow: hidden;
       transition: transform 0.2s, opacity 0.3s;
     }
     .q-option-letter {
-      width: 36px; height: 36px;
-      border-radius: 50%;
+      width: 36px; height: 36px; border-radius: 50%;
       background: rgba(0,0,0,0.25);
       display: flex; align-items: center; justify-content: center;
       font-size: 16px; font-weight: 900; flex-shrink: 0;
     }
     .q-option-text  { flex: 1; }
     .q-option-bar {
-      position: absolute;
-      bottom: 0; left: 0;
-      height: 5px;
-      background: rgba(255,255,255,0.4);
-      transition: width 0.5s ease;
-      width: 0;
+      position: absolute; bottom: 0; left: 0; height: 5px;
+      background: rgba(255,255,255,0.4); transition: width 0.5s ease; width: 0;
     }
     .q-option-count {
-      font-size: 22px;
-      font-weight: 900;
-      color: rgba(255,255,255,0.9);
-      flex-shrink: 0;
-      min-width: 30px;
-      text-align: right;
+      font-size: 22px; font-weight: 900;
+      color: rgba(255,255,255,0.9); flex-shrink: 0;
+      min-width: 30px; text-align: right;
     }
     .opt-0 { background: linear-gradient(135deg, #c0392b, #e74c3c); }
     .opt-1 { background: linear-gradient(135deg, #1a5276, #2980b9); }
     .opt-2 { background: linear-gradient(135deg, #7d6608, #f1c40f); color: #1a1a2e; }
     .opt-3 { background: linear-gradient(135deg, #1e8449, #2ecc71); }
-
-    /* Correct/Incorrect highlight */
-    .q-option.correct   {
-      outline: 4px solid #fff;
-      transform: scale(1.03);
-      box-shadow: 0 0 30px rgba(255,255,255,0.3);
-    }
+    .q-option.correct   { outline: 4px solid #fff; transform: scale(1.03); box-shadow: 0 0 30px rgba(255,255,255,0.3); }
     .q-option.incorrect { opacity: 0.35; }
 
     /* ── Leaderboard Overlay ── */
     .lb-overlay {
-      position: absolute;
-      inset: 0;
-      z-index: 30;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      position: absolute; inset: 0; z-index: 30;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
       padding: 32px;
       background: rgba(15,15,26,0.95);
       backdrop-filter: blur(10px);
-      opacity: 0;
-      pointer-events: none;
+      opacity: 0; pointer-events: none;
       transition: opacity 0.4s ease;
     }
-    .lb-overlay.visible {
-      opacity: 1;
-      pointer-events: all;
-    }
-
+    .lb-overlay.visible { opacity: 1; pointer-events: all; }
     .overlay-title {
-      font-size: 36px;
-      font-weight: 900;
+      font-size: 36px; font-weight: 900;
       background: linear-gradient(135deg, #FF6600, #4ECDC4);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       margin-bottom: 24px;
     }
-
-    /* Mini leaderboard */
     .mini-lb { width: 100%; max-width: 700px; }
     .mini-lb-item {
-      display: flex;
-      align-items: center;
-      gap: 14px;
+      display: flex; align-items: center; gap: 14px;
       padding: 12px 20px;
       background: rgba(255,255,255,0.07);
-      border-radius: 14px;
-      margin-bottom: 10px;
+      border-radius: 14px; margin-bottom: 10px;
       font-size: 18px;
-      animation: slideIn 0.4s ease forwards;
-      opacity: 0;
+      animation: slideIn 0.4s ease forwards; opacity: 0;
     }
     .mini-lb-item:nth-child(1) { animation-delay: 0.1s; }
     .mini-lb-item:nth-child(2) { animation-delay: 0.2s; }
@@ -333,67 +252,64 @@
     }
     .mini-lb-rank  { font-size: 26px; width: 40px; text-align: center; }
     .mini-lb-name  { flex: 1; font-weight: 700; }
-    .mini-lb-score {
-      color: #FF6600;
-      font-weight: 900;
-      font-size: 22px;
-      min-width: 100px;
-      text-align: right;
-    }
+    .mini-lb-score { color: #FF6600; font-weight: 900; font-size: 22px; min-width: 100px; text-align: right; }
 
     /* ── Podium Screen ── */
     #podiumScreen {
-      background: linear-gradient(180deg, #0f0f1a 0%, #1a0f2e 100%);
       align-items: center;
       justify-content: center;
       padding: 32px;
+      gap: 24px;
+      background: linear-gradient(180deg, #0f0f1a 0%, #1a0f2e 100%);
       overflow-y: auto;
     }
     .podium-title {
-      font-size: 52px;
-      font-weight: 900;
+      font-size: 48px; font-weight: 900; text-align: center;
       background: linear-gradient(135deg, #FFD700, #FF6600);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 32px;
-      text-align: center;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
     .podium-row {
       display: flex;
       align-items: flex-end;
       justify-content: center;
-      gap: 16px;
-      margin-bottom: 40px;
+      gap: 24px;
+      width: 100%;
+      max-width: 700px;
     }
     .podium-block {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
+      flex: 1;
+      max-width: 200px;
     }
     .podium-avatar {
-      width: 80px; height: 80px;
-      border-radius: 50%;
+      width: 72px; height: 72px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-size: 36px;
-      border: 4px solid rgba(255,255,255,0.2);
+      font-size: 32px;
+      background: rgba(255,255,255,0.1);
+      border: 3px solid rgba(255,255,255,0.2);
     }
-    .podium-name  {
-      font-size: 16px; font-weight: 700;
-      text-align: center; max-width: 120px;
+    .podium-name {
+      font-size: 15px; font-weight: 700;
+      text-align: center; max-width: 140px;
+      word-break: break-word;
     }
-    .podium-score { font-size: 20px; font-weight: 900; color: #FF6600; }
+    .podium-score {
+      font-size: 18px; font-weight: 900;
+      color: #FF6600;
+    }
     .podium-stand {
-      width: 120px;
+      width: 100%;
       border-radius: 12px 12px 4px 4px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 40px; font-weight: 900;
+      font-size: 36px; font-weight: 900; color: rgba(0,0,0,0.4);
     }
-    .podium-stand.p1 { height: 130px; background: linear-gradient(180deg, #FFD700, #FFA500); }
-    .podium-stand.p2 { height: 100px; background: linear-gradient(180deg, #C0C0C0, #909090); }
-    .podium-stand.p3 { height:  75px; background: linear-gradient(180deg, #CD7F32, #8B5E2F); }
+    .podium-stand.p1 { height: 120px; background: linear-gradient(180deg, #FFD700, #FFA500); }
+    .podium-stand.p2 { height: 90px;  background: linear-gradient(180deg, #C0C0C0, #909090); }
+    .podium-stand.p3 { height: 70px;  background: linear-gradient(180deg, #CD7F32, #8B5E2F); }
 
-    /* Full leaderboard */
     .full-lb { width: 100%; max-width: 600px; }
     .full-lb-item {
       display: flex; align-items: center; gap: 12px;
@@ -405,34 +321,21 @@
     .full-lb-name  { flex: 1; font-weight: 600; }
     .full-lb-score { color: #FF6600; font-weight: 800; }
 
-    /* ── Next Question Button ── */
+    /* ── Next Button ── */
     .btn-next-q {
-      position: fixed;
-      bottom: 24px; right: 24px;
-      z-index: 200;
+      position: fixed; bottom: 24px; right: 24px; z-index: 200;
       padding: 16px 32px;
       background: linear-gradient(135deg, #FF6600, #e55a00);
-      border: none;
-      border-radius: 14px;
-      color: #fff;
-      font-size: 18px;
-      font-weight: 800;
-      cursor: pointer;
+      border: none; border-radius: 14px; color: #fff;
+      font-size: 18px; font-weight: 800; cursor: pointer;
       box-shadow: 0 6px 25px rgba(255,102,0,0.6);
       transition: transform 0.2s, box-shadow 0.2s;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(10px);
+      opacity: 0; pointer-events: none; transform: translateY(10px);
     }
-    .btn-next-q:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 35px rgba(255,102,0,0.8);
-    }
+    .btn-next-q:hover  { transform: translateY(-3px); box-shadow: 0 10px 35px rgba(255,102,0,0.8); }
     .btn-next-q:active { transform: translateY(0); }
     .btn-next-q.visible {
-      opacity: 1;
-      pointer-events: all;
-      transform: translateY(0);
+      opacity: 1; pointer-events: all; transform: translateY(0);
       animation: pulse 1.5s infinite;
     }
     @keyframes pulse {
@@ -443,40 +346,26 @@
 
     /* ── Confetti ── */
     .confetti-piece {
-      position: fixed;
-      border-radius: 3px;
-      top: -20px;
-      animation: confettiFall linear forwards;
-      z-index: 300;
-      pointer-events: none;
+      position: fixed; border-radius: 3px; top: -20px;
+      animation: confettiFall linear forwards; z-index: 300; pointer-events: none;
     }
     @keyframes confettiFall {
       to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
     }
 
-    /* ── Connection status ── */
     #connStatus {
-      position: fixed;
-      top: 8px; left: 50%;
-      transform: translateX(-50%);
-      background: #e74c3c;
-      color: #fff;
-      padding: 6px 18px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 700;
-      z-index: 999;
-      display: none;
+      position: fixed; top: 8px; left: 50%; transform: translateX(-50%);
+      background: #e74c3c; color: #fff; padding: 6px 18px;
+      border-radius: 20px; font-size: 13px; font-weight: 700;
+      z-index: 999; display: none;
     }
     #connStatus.show { display: block; }
   </style>
 </head>
 <body>
 
-<!-- Connection Status -->
 <div id="connStatus">⚠ Verbindung unterbrochen – wird wiederhergestellt…</div>
 
-<!-- Header -->
 <div class="pres-header">
   <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Galaxus_logo.svg/1200px-Galaxus_logo.svg.png" alt="Galaxus" />
   <h1 id="presQuizName">PollWave</h1>
@@ -484,57 +373,45 @@
   <span class="pres-room-code"    id="presRoomCode"></span>
 </div>
 
-<!-- Main -->
 <div class="pres-main" id="presMain">
 
-  <!-- ① Waiting Screen -->
+  <!-- ① Waiting -->
   <div class="screen active" id="waitingScreen">
-    <div class="waiting-title" id="waitingTitle">PollWave Quiz</div>
+    <div class="waiting-title"   id="waitingTitle">PollWave Quiz</div>
     <div class="waiting-sub">Scanne den QR-Code oder gib den Code ein</div>
-    <div class="waiting-code" id="waitingCode">------</div>
-    <div class="waiting-qr"   id="waitingQR"></div>
-    <div class="waiting-url"  id="waitingUrl"></div>
+    <div class="waiting-code"    id="waitingCode">------</div>
+    <div class="waiting-qr"      id="waitingQR"></div>
+    <div class="waiting-url"     id="waitingUrl"></div>
     <div class="waiting-players" id="waitingPlayers">0 Spieler bereit</div>
   </div>
 
-  <!-- ② Question Screen -->
+  <!-- ② Question -->
   <div class="screen" id="questionScreen">
     <div class="progress-bar-wrap">
       <div class="progress-bar-fill" id="progressBar" style="width:100%"></div>
     </div>
-
-    <!-- Top image -->
     <div class="q-image-top" id="qImageTop">
       <img id="qImageTopImg" src="" alt="" />
     </div>
-
     <div class="q-layout" id="qLayout">
-      <!-- Background image -->
       <div class="q-bg-image" id="qBgImage" style="display:none">
         <img id="qBgImageImg" src="" alt="" />
       </div>
-
-      <!-- Left image -->
       <div class="q-image-panel" id="qImageLeft">
         <img id="qImageLeftImg" src="" alt="" />
       </div>
-
-      <!-- Main content -->
       <div class="q-content">
         <div class="q-text-area">
           <div class="q-index" id="qIndex">Frage 1/1</div>
           <div class="q-text"  id="qText">Frage…</div>
         </div>
-
         <div class="q-timer-wrap">
           <svg class="q-timer-svg" width="56" height="56" viewBox="0 0 56 56">
             <circle cx="28" cy="28" r="24" fill="none"
               stroke="rgba(255,255,255,0.1)" stroke-width="5"/>
             <circle id="timerCircle" cx="28" cy="28" r="24" fill="none"
-              stroke="#FF6600" stroke-width="5"
-              stroke-linecap="round"
-              stroke-dasharray="150.8"
-              stroke-dashoffset="0"
+              stroke="#FF6600" stroke-width="5" stroke-linecap="round"
+              stroke-dasharray="150.8" stroke-dashoffset="0"
               transform="rotate(-90 28 28)" />
           </svg>
           <div>
@@ -542,29 +419,23 @@
             <div class="q-timer-sub">Sekunden</div>
           </div>
         </div>
-
         <div class="q-options" id="qOptions"></div>
       </div>
-
-      <!-- Right image -->
       <div class="q-image-panel" id="qImageRight">
         <img id="qImageRightImg" src="" alt="" />
       </div>
     </div>
-
-    <!-- Bottom image -->
     <div class="q-image-bottom" id="qImageBottom">
       <img id="qImageBottomImg" src="" alt="" />
     </div>
-
-    <!-- Leaderboard Overlay (inside questionScreen) -->
+    <!-- Leaderboard Overlay -->
     <div class="lb-overlay" id="lbOverlay">
       <div class="overlay-title">📊 Zwischenstand</div>
       <div class="mini-lb" id="miniLb"></div>
     </div>
   </div>
 
-  <!-- ③ Podium Screen -->
+  <!-- ③ Podium -->
   <div class="screen" id="podiumScreen">
     <div class="podium-title">🏆 Endresultat</div>
     <div class="podium-row" id="podiumRow"></div>
@@ -573,13 +444,11 @@
 
 </div>
 
-<!-- Next Question Button -->
 <button class="btn-next-q" id="btnNextQ" onclick="presenterNext()">
   ⏭ Nächste Frage
 </button>
 
 <script>
-  // ── Setup ──────────────────────────────────────────────────────────────────
   const socket   = io();
   const params   = new URLSearchParams(window.location.search);
   const ROOM     = (params.get('room') || '').toUpperCase();
@@ -591,43 +460,36 @@
   let answerCounts   = [];
   let currentOptions = [];
 
-  // ── Init ───────────────────────────────────────────────────────────────────
+  // ── Init ──
   if (!ROOM) {
-    document.getElementById('waitingTitle').textContent  = '⚠ Kein Raum angegeben';
+    document.getElementById('waitingTitle').textContent    = '⚠ Kein Raum angegeben';
     document.getElementById('waitingTitle').style.fontSize = '28px';
   } else {
-    document.getElementById('presRoomCode').textContent   = ROOM;
-    document.getElementById('waitingCode').textContent    = ROOM;
+    document.getElementById('presRoomCode').textContent = ROOM;
+    document.getElementById('waitingCode').textContent  = ROOM;
     const url = `${window.location.origin}?code=${ROOM}`;
-    document.getElementById('waitingUrl').textContent     = url;
+    document.getElementById('waitingUrl').textContent   = url;
     document.getElementById('waitingQR').innerHTML =
       `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}" />`;
-
     socket.emit('joinRoom', { code: ROOM, name: '__presenter__' });
   }
 
-  // ── Connection Handling ────────────────────────────────────────────────────
-  socket.on('disconnect', () => {
-    document.getElementById('connStatus').classList.add('show');
-  });
-  socket.on('connect', () => {
+  // ── Connection ──
+  socket.on('disconnect', () => document.getElementById('connStatus').classList.add('show'));
+  socket.on('connect',    () => {
     document.getElementById('connStatus').classList.remove('show');
-    if (ROOM) {
-      socket.emit('joinRoom', { code: ROOM, name: '__presenter__' });
-    }
+    if (ROOM) socket.emit('joinRoom', { code: ROOM, name: '__presenter__' });
   });
 
-  // ── Screen Management ──────────────────────────────────────────────────────
+  // ── Screen Management ──
   function showScreen(id) {
-    console.log('[showScreen]', id);
-    document.querySelectorAll('.screen').forEach(s => {
-      s.classList.remove('active');
-    });
+    console.log('[SCREEN]', id);
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const el = document.getElementById(id);
     if (el) el.classList.add('active');
   }
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
+  // ── Helpers ──
   function escHtml(str) {
     return String(str || '')
       .replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -635,23 +497,18 @@
   }
 
   function setProgress(timeLeft, max) {
-    const pct = Math.max(0, (timeLeft / max) * 100);
+    const pct  = Math.max(0, (timeLeft / max) * 100);
     document.getElementById('progressBar').style.width = pct + '%';
-
-    const circumference = 150.8;
-    const offset = circumference * (1 - Math.max(0, timeLeft) / max);
+    const offset = 150.8 * (1 - Math.max(0, timeLeft) / max);
     const circ   = document.getElementById('timerCircle');
     circ.style.strokeDashoffset = offset;
-    circ.style.stroke = timeLeft <= 5  ? '#e74c3c'
-                      : timeLeft <= 10 ? '#f1c40f'
-                      : '#FF6600';
+    circ.style.stroke = timeLeft <= 5 ? '#e74c3c' : timeLeft <= 10 ? '#f1c40f' : '#FF6600';
   }
 
   function resetImagePanels() {
     document.getElementById('qImageTop').style.display    = 'none';
     document.getElementById('qImageBottom').style.display = 'none';
     document.getElementById('qBgImage').style.display     = 'none';
-
     const left  = document.getElementById('qImageLeft');
     const right = document.getElementById('qImageRight');
     left.style.display  = 'none';
@@ -664,15 +521,13 @@
     if (!image) return;
     const sizeClass = 'size-' + (size || 'medium');
     const fitClass  = 'fit-'  + (fit  || 'cover');
-
     if (position === 'left' || position === 'right') {
       const panelId = position === 'left' ? 'qImageLeft'    : 'qImageRight';
       const imgId   = position === 'left' ? 'qImageLeftImg' : 'qImageRightImg';
       const panel   = document.getElementById(panelId);
-      const img     = document.getElementById(imgId);
       panel.className     = `q-image-panel pos-${position} ${sizeClass} ${fitClass}`;
       panel.style.display = 'block';
-      img.src = image;
+      document.getElementById(imgId).src = image;
     } else if (position === 'top') {
       const panel = document.getElementById('qImageTop');
       panel.className     = `q-image-top ${sizeClass} ${fitClass}`;
@@ -691,13 +546,12 @@
 
   function renderOptions(options, counts, correctAnswer) {
     currentOptions = options;
-    const letters  = ['A','B','C','D'];
-    const max      = Math.max(...(counts || [0]), 1);
-    const container = document.getElementById('qOptions');
-    container.innerHTML = options.map((opt, i) => {
+    const letters   = ['A','B','C','D'];
+    const max       = Math.max(...(counts || [0]), 1);
+    document.getElementById('qOptions').innerHTML = options.map((opt, i) => {
       const count = (counts && counts[i]) || 0;
       const pct   = counts ? Math.round((count / max) * 100) : 0;
-      let cls     = `q-option opt-${i}`;
+      let cls = `q-option opt-${i}`;
       if (correctAnswer !== undefined && correctAnswer !== null) {
         cls += i === correctAnswer ? ' correct' : ' incorrect';
       }
@@ -713,74 +567,75 @@
 
   function updateCounts(counts) {
     if (!counts) return;
-    const max      = Math.max(...counts, 1);
-    const countEls = document.querySelectorAll('#qOptions .q-option-count');
-    const barEls   = document.querySelectorAll('#qOptions .q-option-bar');
-    counts.forEach((c, i) => {
-      if (countEls[i]) countEls[i].textContent     = c;
-      if (barEls[i])   barEls[i].style.width = Math.round((c / max) * 100) + '%';
+    const max = Math.max(...counts, 1);
+    document.querySelectorAll('#qOptions .q-option-count').forEach((el, i) => {
+      if (counts[i] !== undefined) el.textContent = counts[i];
+    });
+    document.querySelectorAll('#qOptions .q-option-bar').forEach((el, i) => {
+      if (counts[i] !== undefined) el.style.width = Math.round((counts[i] / max) * 100) + '%';
     });
   }
 
-  // ── Next Button ────────────────────────────────────────────────────────────
+  // ── Next Button ──
   function showNextButton(show) {
     const btn = document.getElementById('btnNextQ');
-    if (show) {
-      btn.classList.add('visible');
-    } else {
-      btn.classList.remove('visible');
-    }
+    btn.classList.toggle('visible', show);
   }
 
   function presenterNext() {
-    console.log('[PRESENTER] adminNextQuestion → room:', ROOM, 'pass:', PASSWORD);
+    console.log('[PRESENTER] next → room:', ROOM);
     socket.emit('adminNextQuestion', { code: ROOM, password: PASSWORD });
     hideLbOverlay();
     showNextButton(false);
   }
 
-  // ── Leaderboard Overlay ────────────────────────────────────────────────────
-  function showLbOverlay() {
-    document.getElementById('lbOverlay').classList.add('visible');
-  }
-  function hideLbOverlay() {
-    document.getElementById('lbOverlay').classList.remove('visible');
-  }
+  // ── Leaderboard Overlay ──
+  function showLbOverlay() { document.getElementById('lbOverlay').classList.add('visible'); }
+  function hideLbOverlay() { document.getElementById('lbOverlay').classList.remove('visible'); }
 
   function renderMiniLeaderboard(leaderboard) {
-    if (!leaderboard || !leaderboard.length) return;
+    if (!leaderboard?.length) return;
     const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
-    document.getElementById('miniLb').innerHTML = leaderboard
-      .slice(0, 5)
-      .map((p, i) => `
-        <div class="mini-lb-item">
-          <div class="mini-lb-rank">${medals[i] || (i + 1)}</div>
-          <div class="mini-lb-name">${escHtml(p.name)}</div>
-          <div class="mini-lb-score">${(p.score || 0).toLocaleString()} Pts</div>
-        </div>`)
-      .join('');
+    document.getElementById('miniLb').innerHTML = leaderboard.slice(0, 5).map((p, i) => `
+      <div class="mini-lb-item">
+        <div class="mini-lb-rank">${medals[i] || (i+1)}</div>
+        <div class="mini-lb-name">${escHtml(p.name)}</div>
+        <div class="mini-lb-score">${(p.score || 0).toLocaleString()} Pts</div>
+      </div>`).join('');
     showLbOverlay();
   }
 
-  // ── Podium ─────────────────────────────────────────────────────────────────
+  // ── Podium ──
   function renderPodium(leaderboard) {
+    console.log('[renderPodium]', leaderboard);
     const sorted = leaderboard || [];
-    const podiumData = [
-      { data: sorted[1], cls: 'p2', emoji: '🥈' },
-      { data: sorted[0], cls: 'p1', emoji: '🥇' },
-      { data: sorted[2], cls: 'p3', emoji: '🥉' }
+
+    // Reihenfolge: 2. Platz links, 1. Platz mitte, 3. Platz rechts
+    const slots = [
+      { data: sorted[1], cls: 'p2', emoji: '🥈', rank: '2' },
+      { data: sorted[0], cls: 'p1', emoji: '🥇', rank: '1' },
+      { data: sorted[2], cls: 'p3', emoji: '🥉', rank: '3' }
     ];
-    document.getElementById('podiumRow').innerHTML = podiumData.map(({ data, cls, emoji }) => {
-      if (!data) return '<div class="podium-block"></div>';
+
+    document.getElementById('podiumRow').innerHTML = slots.map(({ data, cls, emoji, rank }) => {
+      if (!data) {
+        // Leerer Slot – zeige leeres Podium
+        return `
+          <div class="podium-block">
+            <div class="podium-stand ${cls}">${rank}</div>
+          </div>`;
+      }
+      const score = (typeof data.score === 'number') ? data.score : 0;
       return `
         <div class="podium-block">
-          <div class="podium-avatar" style="background:rgba(255,255,255,0.1)">${emoji}</div>
+          <div class="podium-avatar">${emoji}</div>
           <div class="podium-name">${escHtml(data.name)}</div>
-          <div class="podium-score">${(data.score || 0).toLocaleString()} Pts</div>
-          <div class="podium-stand ${cls}">${emoji}</div>
+          <div class="podium-score">${score.toLocaleString()} Pts</div>
+          <div class="podium-stand ${cls}">${rank}</div>
         </div>`;
     }).join('');
 
+    // Platz 4+
     document.getElementById('fullLb').innerHTML = sorted.slice(3).map((p, i) => `
       <div class="full-lb-item">
         <div class="full-lb-rank">${i + 4}</div>
@@ -789,20 +644,20 @@
       </div>`).join('');
   }
 
-  // ── Confetti ───────────────────────────────────────────────────────────────
+  // ── Confetti ──
   function launchConfetti() {
     const colors = ['#FF6600','#4ECDC4','#FFD700','#e74c3c','#9b59b6','#2ecc71'];
     for (let k = 0; k < 150; k++) {
       const el = document.createElement('div');
       el.className = 'confetti-piece';
       el.style.cssText = `
-        left: ${Math.random() * 100}vw;
-        background: ${colors[Math.floor(Math.random() * colors.length)]};
-        animation-duration: ${2 + Math.random() * 2.5}s;
-        animation-delay: ${Math.random() * 2}s;
-        transform: rotate(${Math.random() * 360}deg);
-        width:  ${6 + Math.random() * 8}px;
-        height: ${10 + Math.random() * 10}px;
+        left:${Math.random()*100}vw;
+        background:${colors[Math.floor(Math.random()*colors.length)]};
+        animation-duration:${2+Math.random()*2.5}s;
+        animation-delay:${Math.random()*2}s;
+        transform:rotate(${Math.random()*360}deg);
+        width:${6+Math.random()*8}px;
+        height:${10+Math.random()*10}px;
       `;
       document.body.appendChild(el);
       el.addEventListener('animationend', () => el.remove());
@@ -813,21 +668,15 @@
   // Socket Events
   // ══════════════════════════════════════════════════════════════════════════
 
-  socket.on('joinedRoom', ({ quizName, state, players, currentQuestion }) => {
-    console.log('[joinedRoom]', { quizName, state, players, currentQuestion });
+  socket.on('joinedRoom', ({ quizName, state, players }) => {
     const name = quizName || 'PollWave Quiz';
     document.getElementById('waitingTitle').textContent    = name;
     document.getElementById('presQuizName').textContent    = name;
-    document.getElementById('waitingPlayers').textContent  = `${players || 0} Spieler bereit`;
-    document.getElementById('presPlayerCount').textContent = `${players || 0} Spieler`;
-
-    if (state === 'playing') {
-      showScreen('questionScreen');
-    } else if (state === 'finished') {
-      showScreen('podiumScreen');
-    } else {
-      showScreen('waitingScreen');
-    }
+    document.getElementById('waitingPlayers').textContent  = `${players||0} Spieler bereit`;
+    document.getElementById('presPlayerCount').textContent = `${players||0} Spieler`;
+    if      (state === 'playing')  showScreen('questionScreen');
+    else if (state === 'finished') showScreen('podiumScreen');
+    else                           showScreen('waitingScreen');
   });
 
   socket.on('playerJoined', ({ playerCount }) => {
@@ -853,22 +702,17 @@
     showScreen('questionScreen');
   });
 
-  socket.on('newQuestion', ({
-    index, total, question, options, time,
-    image, imagePosition, imageSize, imageFit
-  }) => {
-    console.log('[newQuestion]', { index, total, question, options, time });
+  socket.on('newQuestion', ({ index, total, question, options, time, image, imagePosition, imageSize, imageFit }) => {
+    console.log('[newQuestion]', index, '/', total, question);
 
     maxTime      = time || 30;
     currentTime  = maxTime;
     totalQ       = total;
-    answerCounts = new Array((options || []).length).fill(0);
+    answerCounts = new Array((options||[]).length).fill(0);
 
-    // Reset overlays
     hideLbOverlay();
     showNextButton(false);
 
-    // Update question UI
     document.getElementById('qIndex').textContent    = `Frage ${index + 1} / ${total}`;
     document.getElementById('qText').textContent     = question;
     document.getElementById('timerText').textContent = maxTime;
@@ -878,7 +722,6 @@
     applyImage(image, imagePosition, imageSize, imageFit);
     renderOptions(options || [], null, null);
 
-    // WICHTIG: Screen wechseln
     showScreen('questionScreen');
   });
 
@@ -896,7 +739,7 @@
   });
 
   socket.on('questionEnd', ({ correctAnswer, answerCounts: counts, leaderboard }) => {
-    console.log('[questionEnd]', { correctAnswer, counts, leaderboard });
+    console.log('[questionEnd] correctAnswer:', correctAnswer, 'leaderboard:', leaderboard);
 
     // Highlight correct/incorrect
     document.querySelectorAll('#qOptions .q-option').forEach((el, i) => {
@@ -904,39 +747,30 @@
       el.classList.add(i === correctAnswer ? 'correct' : 'incorrect');
     });
 
-    // Update final counts
     if (counts) updateCounts(counts);
-
-    // Show leaderboard overlay
     renderMiniLeaderboard(leaderboard);
-
-    // Show "Nächste Frage" button
     showNextButton(true);
   });
 
   socket.on('gameFinished', ({ leaderboard }) => {
     console.log('[gameFinished]', leaderboard);
-    launchConfetti();
     showNextButton(false);
     hideLbOverlay();
     renderPodium(leaderboard);
     showScreen('podiumScreen');
+    setTimeout(launchConfetti, 300);
   });
 
   socket.on('gameReset', () => {
-    console.log('[gameReset]');
     hideLbOverlay();
     showNextButton(false);
     showScreen('waitingScreen');
   });
 
-  socket.on('error', ({ message }) => {
-    console.warn('[ERROR]', message);
-  });
+  socket.on('error', ({ message }) => console.warn('[ERROR]', message));
 
-  // Debug
   socket.onAny((event, ...args) => {
-    console.log('[SOCKET]', event, JSON.stringify(args).slice(0, 200));
+    console.log('[SOCKET EVENT]', event, JSON.stringify(args).slice(0, 200));
   });
 </script>
 </body>

@@ -32,19 +32,15 @@ const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    const allowed = ['image/jpeg','image/jpg','image/png','image/gif','image/webp'];
     cb(null, allowed.includes(file.mimetype));
   }
 });
 
 function loadGames() {
   try {
-    if (fs.existsSync(DATA_FILE)) {
-      return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-    }
-  } catch (e) {
-    console.error('Error loading games:', e);
-  }
+    if (fs.existsSync(DATA_FILE)) return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+  } catch (e) { console.error('Error loading games:', e); }
   return {};
 }
 
@@ -56,9 +52,7 @@ function saveGames(games) {
       clean[code] = rest;
     }
     fs.writeFileSync(DATA_FILE, JSON.stringify(clean, null, 2));
-  } catch (e) {
-    console.error('Error saving games:', e);
-  }
+  } catch (e) { console.error('Error saving games:', e); }
 }
 
 let games = loadGames();
@@ -98,20 +92,13 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
 
 app.post('/api/rooms', (req, res) => {
   const { password, quizName } = req.body;
-  if (password !== ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Falsches Passwort' });
-  }
+  if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Falsches Passwort' });
   let code;
   do { code = generateCode(); } while (games[code]);
-
   games[code] = {
-    code,
-    quizName:        quizName || 'PollWave Quiz',
-    state:           'waiting',
-    players:         {},
-    questions:       [],
-    currentQuestion: -1,
-    createdAt:       new Date().toISOString()
+    code, quizName: quizName || 'PollWave Quiz',
+    state: 'waiting', players: {}, questions: [],
+    currentQuestion: -1, createdAt: new Date().toISOString()
   };
   saveGames(games);
   console.log(`[ROOM] Created: ${code}`);
@@ -120,31 +107,21 @@ app.post('/api/rooms', (req, res) => {
 
 app.post('/api/rooms/:code/rejoin', (req, res) => {
   const { password } = req.body;
-  if (password !== ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Falsches Passwort' });
-  }
+  if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Falsches Passwort' });
   const room = games[req.params.code?.toUpperCase()];
   if (!room) return res.status(404).json({ error: 'Raum nicht gefunden' });
-
-  const players = getLeaderboard(room);
   res.json({
-    code:            room.code,
-    quizName:        room.quizName || 'PollWave Quiz',
-    state:           room.state,
-    questions:       room.questions || [],
-    currentQuestion: room.currentQuestion,
-    players
+    code: room.code, quizName: room.quizName || 'PollWave Quiz',
+    state: room.state, questions: room.questions || [],
+    currentQuestion: room.currentQuestion, players: getLeaderboard(room)
   });
 });
 
 app.put('/api/rooms/:code/name', (req, res) => {
   const { password, quizName } = req.body;
-  if (password !== ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Falsches Passwort' });
-  }
+  if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Falsches Passwort' });
   const room = games[req.params.code?.toUpperCase()];
   if (!room) return res.status(404).json({ error: 'Raum nicht gefunden' });
-
   room.quizName = quizName || 'PollWave Quiz';
   saveGames(games);
   io.to(room.code).emit('quizNameUpdated', { quizName: room.quizName });
@@ -153,12 +130,9 @@ app.put('/api/rooms/:code/name', (req, res) => {
 
 app.put('/api/rooms/:code/questions', (req, res) => {
   const { password, questions } = req.body;
-  if (password !== ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Falsches Passwort' });
-  }
+  if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Falsches Passwort' });
   const room = games[req.params.code?.toUpperCase()];
   if (!room) return res.status(404).json({ error: 'Raum nicht gefunden' });
-
   room.questions = questions || [];
   saveGames(games);
   res.json({ success: true, count: room.questions.length });
@@ -168,53 +142,34 @@ app.get('/api/rooms/:code', (req, res) => {
   const room = games[req.params.code?.toUpperCase()];
   if (!room) return res.status(404).json({ error: 'Raum nicht gefunden' });
   res.json({
-    code:      room.code,
-    quizName:  room.quizName,
-    state:     room.state,
-    players:   Object.keys(room.players).filter(n => n !== '__presenter__').length,
+    code: room.code, quizName: room.quizName, state: room.state,
+    players: Object.keys(room.players).filter(n => n !== '__presenter__').length,
     questions: room.questions?.length || 0
   });
 });
 
 app.delete('/api/rooms/:code', (req, res) => {
   const { password } = req.body;
-  if (password !== ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Falsches Passwort' });
-  }
+  if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Falsches Passwort' });
   const code = req.params.code?.toUpperCase();
   if (!games[code]) return res.status(404).json({ error: 'Raum nicht gefunden' });
-
   if (games[code].timer) clearInterval(games[code].timer);
   delete games[code];
   saveGames(games);
   res.json({ success: true });
 });
 
-app.post('/api/create-room', (req, res) => {
-  req.url = '/api/rooms';
-  app.handle(req, res);
-});
-app.post('/api/rejoin-room', (req, res) => {
-  const { code } = req.body;
-  req.params = { code };
-  req.url = `/api/rooms/${code}/rejoin`;
-  app.handle(req, res);
-});
-
 app.get('/admin',   (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 app.get('/present', (req, res) => res.sendFile(path.join(__dirname, 'public', 'present.html')));
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Question Timer Logic
+// Timer Logic
 // ══════════════════════════════════════════════════════════════════════════════
 function startQuestionTimer(roomCode) {
   const room = games[roomCode];
   if (!room) return;
 
-  if (room.timer) {
-    clearInterval(room.timer);
-    room.timer = null;
-  }
+  if (room.timer) { clearInterval(room.timer); room.timer = null; }
 
   const qIndex   = room.currentQuestion;
   const question = room.questions[qIndex];
@@ -223,15 +178,14 @@ function startQuestionTimer(roomCode) {
   const maxTime  = question.time || 30;
   let   timeLeft = maxTime;
 
-  room.questionAnswers  = {};
-  room._endingQuestion  = false; // ← Reset guard on new question
+  room.questionAnswers = {};
+  room._endingQuestion = false;
+  room._questionEnded  = false; // ← NEU: Track ob questionEnd bereits gefeuert
 
   const questionData = {
-    index:         qIndex,
-    total:         room.questions.length,
-    question:      question.question,
-    options:       question.options,
-    time:          maxTime,
+    index: qIndex, total: room.questions.length,
+    question: question.question, options: question.options,
+    time: maxTime,
     image:         question.image         || null,
     imagePosition: question.imagePosition || 'right',
     imageSize:     question.imageSize     || 'medium',
@@ -239,12 +193,11 @@ function startQuestionTimer(roomCode) {
   };
 
   io.to(roomCode).emit('newQuestion', questionData);
-  console.log(`[Q] Room ${roomCode} → Q${qIndex + 1}/${room.questions.length}: "${question.question}"`);
+  console.log(`[Q] Room ${roomCode} → Q${qIndex+1}/${room.questions.length}: "${question.question}"`);
 
   room.timer = setInterval(() => {
     timeLeft--;
     io.to(roomCode).emit('timerUpdate', { timeLeft, maxTime });
-
     if (timeLeft <= 0) {
       clearInterval(room.timer);
       room.timer = null;
@@ -256,28 +209,26 @@ function startQuestionTimer(roomCode) {
 function endQuestion(roomCode) {
   const room = games[roomCode];
   if (!room) return;
-
   if (room._endingQuestion) return;
   room._endingQuestion = true;
+  room._questionEnded  = true; // ← Markiere als gefeuert
 
   const qIndex       = room.currentQuestion;
   const question     = room.questions[qIndex];
   const answerCounts = getAnswerCounts(room, qIndex);
   const leaderboard  = getLeaderboard(room);
 
-  console.log(`[END Q] Room ${roomCode} Q${qIndex + 1} — leaderboard:`, leaderboard);
+  console.log(`[END Q] Room ${roomCode} Q${qIndex+1} — leaderboard:`, leaderboard);
 
   io.to(roomCode).emit('questionEnd', {
     correctAnswer: question.correctAnswer,
-    answerCounts,
-    leaderboard,
+    answerCounts, leaderboard,
     question: question.question,
     options:  question.options
   });
 
   saveGames(games);
 
-  // ← Kürzerer Reset: 500ms reicht
   setTimeout(() => {
     if (games[roomCode]) games[roomCode]._endingQuestion = false;
   }, 500);
@@ -293,7 +244,7 @@ function advanceGame(roomCode) {
     room.state = 'finished';
     const finalLeaderboard = getLeaderboard(room);
     saveGames(games);
-    console.log(`[FINISH] Room ${roomCode} — final leaderboard:`, finalLeaderboard);
+    console.log(`[FINISH] Room ${roomCode} — final:`, finalLeaderboard);
     io.to(roomCode).emit('gameFinished', { leaderboard: finalLeaderboard });
   } else {
     saveGames(games);
@@ -310,15 +261,8 @@ io.on('connection', (socket) => {
   function handleJoin({ code, name }) {
     const roomCode = code?.toUpperCase();
     const room     = games[roomCode];
-
-    if (!room) {
-      socket.emit('error', { message: 'Raum nicht gefunden' });
-      return;
-    }
-    if (!name?.trim()) {
-      socket.emit('error', { message: 'Name erforderlich' });
-      return;
-    }
+    if (!room)       { socket.emit('error', { message: 'Raum nicht gefunden' }); return; }
+    if (!name?.trim()) { socket.emit('error', { message: 'Name erforderlich' }); return; }
 
     socket.join(roomCode);
     socket.roomCode   = roomCode;
@@ -331,25 +275,20 @@ io.on('connection', (socket) => {
     } else {
       if (!room.players[name]) {
         room.players[name] = {
-          score:              0,
-          answers:            [],
-          lastAnswer:         null,
-          lastAnswerQuestion: -1
+          score: 0, answers: [],
+          lastAnswer: null, lastAnswerQuestion: -1
         };
       }
     }
 
     saveGames(games);
 
-    const playerCount = Object.keys(room.players)
-      .filter(n => n !== '__presenter__').length;
+    const playerCount = Object.keys(room.players).filter(n => n !== '__presenter__').length;
 
     socket.emit('joinedRoom', {
-      code:            roomCode,
-      quizName:        room.quizName,
-      state:           room.state,
-      players:         playerCount,
-      questions:       room.questions?.length || 0,
+      code: roomCode, quizName: room.quizName,
+      state: room.state, players: playerCount,
+      questions: room.questions?.length || 0,
       currentQuestion: room.currentQuestion
     });
 
@@ -364,11 +303,9 @@ io.on('connection', (socket) => {
       const question = room.questions[room.currentQuestion];
       if (question) {
         socket.emit('newQuestion', {
-          index:         room.currentQuestion,
-          total:         room.questions.length,
-          question:      question.question,
-          options:       question.options,
-          time:          question.time || 30,
+          index: room.currentQuestion, total: room.questions.length,
+          question: question.question, options: question.options,
+          time: question.time || 30,
           image:         question.image         || null,
           imagePosition: question.imagePosition || 'right',
           imageSize:     question.imageSize     || 'medium',
@@ -382,22 +319,17 @@ io.on('connection', (socket) => {
   socket.on('joinGame', handleJoin);
 
   socket.on('startGame', ({ code, password }) => {
-    if (password !== ADMIN_PASSWORD) {
-      socket.emit('error', { message: 'Unauthorized' });
-      return;
-    }
+    if (password !== ADMIN_PASSWORD) { socket.emit('error', { message: 'Unauthorized' }); return; }
     const roomCode = code?.toUpperCase();
     const room     = games[roomCode];
     if (!room) return;
     if (room.state === 'playing') return;
-    if (!room.questions?.length) {
-      socket.emit('error', { message: 'Keine Fragen vorhanden' });
-      return;
-    }
+    if (!room.questions?.length) { socket.emit('error', { message: 'Keine Fragen vorhanden' }); return; }
 
     room.state           = 'playing';
     room.currentQuestion = 0;
     room._endingQuestion = false;
+    room._questionEnded  = false;
 
     for (const name of Object.keys(room.players)) {
       room.players[name].score              = 0;
@@ -408,37 +340,34 @@ io.on('connection', (socket) => {
 
     saveGames(games);
     io.to(roomCode).emit('gameStarted', {
-      quizName:       room.quizName,
-      totalQuestions: room.questions.length
+      quizName: room.quizName, totalQuestions: room.questions.length
     });
     startQuestionTimer(roomCode);
   });
 
+  // ── handleNextQuestion: NUR advanceGame, kein doppeltes endQuestion ────────
   function handleNextQuestion({ code, password }) {
-    if (password !== ADMIN_PASSWORD) {
-      socket.emit('error', { message: 'Unauthorized' });
-      return;
-    }
+    if (password !== ADMIN_PASSWORD) { socket.emit('error', { message: 'Unauthorized' }); return; }
     const roomCode = code?.toUpperCase();
     const room     = games[roomCode];
     if (!room || room.state !== 'playing') return;
 
-    console.log(`[NEXT Q] Room ${roomCode} — requested by ${socket.playerName || socket.id}`);
+    console.log(`[NEXT Q] Room ${roomCode} — by ${socket.playerName || socket.id}`);
 
-    // Stop timer
-    if (room.timer) {
-      clearInterval(room.timer);
-      room.timer = null;
-    }
+    // Timer stoppen
+    if (room.timer) { clearInterval(room.timer); room.timer = null; }
 
-    // ← Reset guard so endQuestion kann feuern
-    room._endingQuestion = false;
-
-    endQuestion(roomCode);
-
-    setTimeout(() => {
+    // Falls questionEnd noch NICHT gefeuert hat → jetzt feuern
+    if (!room._questionEnded) {
+      room._endingQuestion = false;
+      endQuestion(roomCode);
+      setTimeout(() => advanceGame(roomCode), 1500);
+    } else {
+      // questionEnd bereits gefeuert → direkt advance
+      room._endingQuestion = false;
+      room._questionEnded  = false;
       advanceGame(roomCode);
-    }, 1500);
+    }
   }
 
   socket.on('nextQuestion',      handleNextQuestion);
@@ -469,34 +398,24 @@ io.on('connection', (socket) => {
 
     saveGames(games);
 
-    socket.emit('answerResult', {
-      correct: isCorrect,
-      points,
-      score: player.score
-    });
+    socket.emit('answerResult', { correct: isCorrect, points, score: player.score });
 
     const answerCounts = getAnswerCounts(room, qIndex);
     io.to(roomCode).emit('answerUpdate', { answerCounts });
 
-    console.log(`[ANSWER] ${name} in ${roomCode}: option ${answer} — ${isCorrect ? '✓' : '✗'} +${points}`);
+    console.log(`[ANSWER] ${name}: opt ${answer} — ${isCorrect?'✓':'✗'} +${points}`);
 
     // Auto-advance wenn alle geantwortet haben
-    const activePlayers = Object.entries(room.players)
-      .filter(([n]) => n !== '__presenter__');
-    const allAnswered = activePlayers.length > 0 &&
+    const activePlayers = Object.entries(room.players).filter(([n]) => n !== '__presenter__');
+    const allAnswered   = activePlayers.length > 0 &&
       activePlayers.every(([, p]) => p.lastAnswerQuestion === qIndex);
 
     if (allAnswered) {
       console.log(`[AUTO-ADVANCE] All ${activePlayers.length} players answered in ${roomCode}`);
-
-      // Timer sofort stoppen
-      if (room.timer) {
-        clearInterval(room.timer);
-        room.timer = null;
-      }
+      if (room.timer) { clearInterval(room.timer); room.timer = null; }
 
       setTimeout(() => {
-        if (room._endingQuestion) return; // bereits in progress
+        if (room._endingQuestion) return;
         endQuestion(roomCode);
         setTimeout(() => advanceGame(roomCode), 1500);
       }, 500);
@@ -504,39 +423,31 @@ io.on('connection', (socket) => {
   });
 
   socket.on('endGame', ({ code, password }) => {
-    if (password !== ADMIN_PASSWORD) {
-      socket.emit('error', { message: 'Unauthorized' });
-      return;
-    }
+    if (password !== ADMIN_PASSWORD) { socket.emit('error', { message: 'Unauthorized' }); return; }
     const roomCode = code?.toUpperCase();
     const room     = games[roomCode];
     if (!room) return;
 
     if (room.timer) { clearInterval(room.timer); room.timer = null; }
-
     room.state = 'finished';
     const finalLeaderboard = getLeaderboard(room);
     saveGames(games);
-
-    console.log(`[END GAME] Room ${roomCode} — leaderboard:`, finalLeaderboard);
+    console.log(`[END GAME] Room ${roomCode}`, finalLeaderboard);
     io.to(roomCode).emit('gameFinished', { leaderboard: finalLeaderboard });
   });
 
   socket.on('resetGame', ({ code, password }) => {
-    if (password !== ADMIN_PASSWORD) {
-      socket.emit('error', { message: 'Unauthorized' });
-      return;
-    }
+    if (password !== ADMIN_PASSWORD) { socket.emit('error', { message: 'Unauthorized' }); return; }
     const roomCode = code?.toUpperCase();
     const room     = games[roomCode];
     if (!room) return;
 
     if (room.timer) { clearInterval(room.timer); room.timer = null; }
-
     room.state           = 'waiting';
     room.currentQuestion = -1;
     room.questionAnswers = {};
     room._endingQuestion = false;
+    room._questionEnded  = false;
 
     for (const name of Object.keys(room.players)) {
       room.players[name].score              = 0;
@@ -553,7 +464,6 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     const { roomCode, playerName } = socket;
     if (!roomCode || !playerName) return;
-
     const room = games[roomCode];
     if (!room) return;
 
@@ -562,9 +472,7 @@ io.on('connection', (socket) => {
       saveGames(games);
     }
 
-    const playerCount = Object.keys(room.players)
-      .filter(n => n !== '__presenter__').length;
-
+    const playerCount = Object.keys(room.players).filter(n => n !== '__presenter__').length;
     io.to(roomCode).emit('playerLeft', { name: playerName, playerCount });
     console.log(`[LEAVE] ${playerName} ← ${roomCode} (${playerCount} players)`);
   });
